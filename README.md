@@ -11,7 +11,7 @@
 	* brpc
 	* seastar
 * **Redis**
-	* 常见建构
+	* Redis集群常见架构
 	* 数据结构实现 && 部分源码解析
 	* Twemproxy
 	* Twemcache
