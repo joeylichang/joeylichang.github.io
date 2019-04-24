@@ -1,37 +1,29 @@
-## Welcome to GitHub Pages
+# Navigation
 
-You can use the [editor on GitHub](https://github.com/joeylichang/joeylichang.github.io/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+## NoSQL分布式系统概述
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## 分布式协议
+### Paxos (PhxPaxos)
+### Raft (braft)
+### Gossip (RedisCluster)
 
-### Markdown
+## RPC
+### 概述
+### brpc
+### seastar
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+## Redis
+### 数据结构 && 部分实现
+### Twemproxy
+### Twemcache
 
-```markdown
-Syntax highlighted code block
+## DynamoDB
 
-# Header 1
-## Header 2
-### Header 3
+## CockroachDB
 
-- Bulleted
-- List
+## RocksDB
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/joeylichang/joeylichang.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+## 读书笔记
+### 大规模分布式存储系统
+### MySQL技术内幕:InnoDB存储引擎
+### 数据密集型应用系统设计
