@@ -1,6 +1,6 @@
 # Navigation
 
-*  **NoSQL分布式系统概述**
+*  **[NoSQL分布式系统概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/nosql_desigin/nosql_distributed_systems_desgin.md)**
 
 * **分布式协议**
 	* Paxos ([PhxPaxos](https://blog.csdn.net/weixin_41713182/article/details/88147487))
