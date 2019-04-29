@@ -3,7 +3,7 @@
 *  **NoSQL分布式系统概述**
 
 * **分布式协议**
-	* Paxos (PhxPaxos)
+	* Paxos ([PhxPaxos](https://blog.csdn.net/weixin_41713182/article/details/88147487))
 	* Raft (braft)
 	* Gossip (RedisCluster)
 * **RPC**
