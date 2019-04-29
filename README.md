@@ -19,6 +19,6 @@
 * **CockroachDB**
 * **RocksDB**
 * **读书笔记**
-	* 大规模分布式存储系统
+	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
 	* MySQL技术内幕:InnoDB存储引擎
 	* 数据密集型应用系统设计
