@@ -28,7 +28,7 @@
 * 具备命名服务、负载均衡、组合访问（下游服务）
 
 ## 线程模型
-本部分主要是参考[brpc的作者对线程模型的分析](https://github.com/apache/incubator-brpc/blob/master/docs/cn/threading_overview.md)，在此基础上结合一些自己的理解。
+本部分主要是参考[brpc的作者对线程模型的分析](https://github.com/apache/incubator-brpc/blob/master/docs/cn/threading_overview.md)，在此基础上结合一些自己的理解，重点针对RPC的线程模型进行描述，RPC其他的要素将在后续文章中介绍。
 
 * 连接独占线程或进程
 	1. 一个连接对应一个线程或进程，典型的应用是tomcat web server，显然性能是比较差的，因此也引入了C10K问题。
