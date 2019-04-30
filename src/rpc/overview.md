@@ -49,7 +49,7 @@
 * 多线程Reactor
 	1. dispatcher + workers模型（也可能是多个dispatcher）。
 	2. 由于cache一致性的原因，性能并没有随着core的增加而线性提升。
-	3. 常见的多dispatcher模型是按网络、CPU、Disk将线程分类没类有多个线程。
+	3. 常见的多dispatcher模型是按网络、CPU、Disk将线程分组，每组有多个线程。
 	4. 问题：
 		1. 很难保证一个用户请求被精致的切分为若干个分段去Reactor注册回调，往往是回调中包括若干个同步的耗时请求（尤其是多人协同开发），导致没有充分发挥其性能。
 		2. 线程之间的同步多数是mutex + queue，这又很难保证性能（优先级队列可以适当缓解）。
@@ -57,13 +57,13 @@
 		4. 多线程之间共享指针是比较常见的，但是内存一旦出现问题由于是异步编程定位又相对较难。
 
 * M:N线程库（[bthread](https://github.com/apache/incubator-brpc/tree/master/src/bthread)）
-	1. bthread是brpc底层使用的线程模型，也是brpc高性能的保证。
+	1. bthread是brpc底层使用的线程库，也是brpc高性能的保证。
 	2. bthread是一个用户态的线程，但他并不是协程，主要区别有几下几点：
-		1. N个协程对应一个线程，M个bthread对应N个线程（M >= N）。
+		1. N个协程对应一个系统线程，M个bthread对应N个系统线程（M >= N）。
 		2. 从开发者的使用上看，bthread更像是一套用户态的pthread（提供了bthread_create、bthread_mutex、bthread_cond等接口）。
 		3. 一个pthread一个时刻只能运行一个bthread，当bthread堵塞时不会切换其他的bthread，但是当有pthread空闲时会“偷”其他pthread在排队的bthread执行。
 		4. bthread不能替换pthread，因为他不是完备的系统线程，没有优先级、时间片抢占等，只是针对网络处理（供brpc）使用。
 		5. bthread和pthread之间通过butex可以进行同步。
-	7. 优点：brpc使用bthread充分的利用了cache局部性、实现了高并发（详细介绍见后续文章）。
+	7. 应用：brpc使用bthread充分的利用了cache局部性、实现了高并发（详细介绍见后续文章）。
 
 
