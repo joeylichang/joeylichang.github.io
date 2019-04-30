@@ -44,6 +44,7 @@ memory_order_release用于store操作，memory_order_acquire用于load操作，�
 | flag.store(true, memory_order_release) |                                                                             | #2 |
 |                                                                 | iif( true == flag.load(memory_order_acquire))    | #3 |
 |                                                                 | assert(a == 1)                                                     | #4 |
+
 #1不会重排到#2之后，#4不会重排到#3之前，保证了线程间的顺序，进而完成了线程间的同步。
 
 **2. memory_order_release/memory_order_consume**
@@ -59,6 +60,7 @@ memory_order_release还可以和memory_order_consume搭配使用。memory_order_
 |                                                                 | assert(a==1)                                                          | #4 |
 |                                                                 | assert(c==true)                                                      | #5 |
 |                                                                 | assert(b==true)                                                      | #6 |
+
 禁止重排的逻辑与release/acquire相同，区别在于只对具有依赖关系的变量不进行重排。flag依赖b，c依赖flag，所有#5#6是正确的，但是原子指令并没有依赖a，所有#4可能会失败，因为threadA中a=1可能被优化到#4后面。
 
 **3. memory_order_acq_rel**
@@ -75,6 +77,7 @@ release和acquire的结合体，兼具两者的特性。用于“读取-修改-�
 |                                                                        | assert(a==1)                                                                                                              | #6 |
 | if (true == flag.load(memory_order_acquire) |                                                                                                                                    | #7 |
 | assert(c == 2)                                                |                                                                                                                                    | #8 |
+
 #2#5组成release-acquire对，因此#6一定成立。#5#7组成release-acquire对，因此#8一定成立。
 
 ### 顺序一致性模型（memory_order_seq_cst）
