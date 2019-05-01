@@ -5,17 +5,19 @@ bthread是brpc底层的线程库，保证了brpc的高性能，可以说brpc底�
 ## 导航
 本系列文章通过以下几部分介绍bthread：
 
-* bthread线程库的初始化
-	* pthread与bthread关系
-	* bthread上下文
+* bthread_init
+	* pthread vs. bthread
+	* task meta
 * bthread_start_urgent/bthread_start_background
-	* bthread切换
+	* bthread switch
 	* bthread steal
 * butex
-	* bthread与bthread、bthread与pthread同步机制
+	* similar to futex
+	* bthread and bthread sync
+	* bthread and pthread sync
 * bthread_join
-	* 基于butex实现bthread的join
+	* bthread join with butex
 * bthread_interrupt
-	* bthread间唤醒
+	* bthread wakeup
 * bthread_mutex
-	* 基于butex实现bthread的锁
+	* bthread mutex whith butex
