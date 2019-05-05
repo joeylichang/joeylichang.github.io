@@ -5,9 +5,12 @@ bthread是brpc底层的线程库，保证了brpc的高性能，可以说brpc底�
 ## 导航
 本系列文章通过以下几部分介绍bthread：
 
-* env init
+* [env init](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/bthread/init.md)
 	* pthread vs. bthread
+	* add_group/destory_group
+	* steal_task
 	* task meta
+	* signal_task/wait_task
 * bthread_start_urgent/bthread_start_background
 	* bthread switch
 	* bthread steal
