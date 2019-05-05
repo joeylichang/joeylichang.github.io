@@ -224,5 +224,5 @@ int TaskGroup::init(size_t runqueue_capacity) {
 2. TaskMeta、tid等很多数据结构在内存上都是用了version + offset的方式实现内存重用，详细见[brpc文档](https://github.com/joeylichang/incubator-brpc/blob/master/docs/cn/memory_management.md)。
 
 ### signal_task / wait_task
-1. signal_task / wait_task内部使用了ParkingLot完成了group之间信号量的机制。
-2. ParkingLot底层使用futex_wake_private、futex_wait_private（bthread实现的用户态futex）
+1. signal_task / wait_task内部使用了ParkingLot完成了group之间的通信（ParkingLot实现了信号量机制）。
+2. ParkingLot底层使用bthread实现的用户态futex（futex_wake_private、futex_wait_private），详情见[ParkingLot源码](https://github.com/joeylichang/incubator-brpc/blob/master/src/bthread/parking_lot.h)。
