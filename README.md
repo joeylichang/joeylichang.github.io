@@ -8,7 +8,7 @@
 	* Gossip (RedisCluster)
 * **RPC**
 	* [RPC概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/overview.md)
-	* brpc
+	* [brpc](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/overview.md)
 	* seastar
 * **Redis**
 	* Redis集群常见架构
