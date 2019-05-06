@@ -181,39 +181,39 @@ bool TaskControl::steal_task(bthread_t* tid, size_t* seed, size_t offset) {
 TaskControl的create_group内部调用了TaskGroup::init初始化group，它也是创建group的唯一入口，下面看一下其源码：
 ```
 int TaskGroup::init(size_t runqueue_capacity) {
-    if (_rq.init(runqueue_capacity) != 0) {						// bthread队列
+    if (_rq.init(runqueue_capacity) != 0) {			// bthread队列
         LOG(FATAL) << "Fail to init _rq";						
         return -1;
     }
-    if (_remote_rq.init(runqueue_capacity / 2) != 0) {			   		// bthread远程队列后续blog介绍
+    if (_remote_rq.init(runqueue_capacity / 2) != 0) {		// bthread远程队列后续blog介绍
         LOG(FATAL) << "Fail to init _remote_rq";
         return -1;
     }
-    ContextualStack* stk = get_stack(STACK_TYPE_MAIN, NULL);				// bthread运行环境（栈和寄存器信息）
+    ContextualStack* stk = get_stack(STACK_TYPE_MAIN, NULL);	// bthread运行环境（栈和寄存器信息）
     if (NULL == stk) {
         LOG(FATAL) << "Fail to get main stack container";
         return -1;
     }
-    butil::ResourceId<TaskMeta> slot;							// TaskMeta资源的资源ID
-    TaskMeta* m = butil::get_resource<TaskMeta>(&slot);	               			// 申请TaskMeta内存并返回资源ID，内存重用
+    butil::ResourceId<TaskMeta> slot;			// TaskMeta资源的资源ID
+    TaskMeta* m = butil::get_resource<TaskMeta>(&slot); // 申请TaskMeta内存并返回资源ID，内存重用
     if (NULL == m) {
         LOG(FATAL) << "Fail to get TaskMeta";
         return -1;
     }
-    m->stop = false;									// 是否停止的标志
-    m->interrupted = false;								// 是否被其他bthread唤醒过，bthread_interrupt函数会操作该标志
-    m->about_to_quit = false;								// 是否即将推出
-    m->fn = NULL;									// fn是创建bthread时用户传入的入口函数，arg是fn参数
+    m->stop = false;					// 是否停止的标志
+    m->interrupted = false;				// 是否被其他bthread唤醒过，bthread_interrupt函数会操作该标志
+    m->about_to_quit = false;				// 是否即将推出
+    m->fn = NULL;					// fn是创建bthread时用户传入的入口函数，arg是fn参数
     m->arg = NULL;
-    m->local_storage = LOCAL_STORAGE_INIT;						// bthread的tls
-    m->cpuwide_start_ns = butil::cpuwide_time_ns();					// 统计信息
+    m->local_storage = LOCAL_STORAGE_INIT;		// bthread的tls
+    m->cpuwide_start_ns = butil::cpuwide_time_ns();	// 统计信息
     m->stat = EMPTY_STAT;			
-    m->attr = BTHREAD_ATTR_TASKGROUP;							// bthread的attr，用户可指定
-    m->tid = make_tid(*m->version_butex, slot);						// tid，bthread的唯一标识，m->version_butex 是bthread的同步机制，在这里主要用于bthread的join
-    m->set_stack(stk);									// bthread运行环境（栈和寄存器信息）
+    m->attr = BTHREAD_ATTR_TASKGROUP;			// bthread的attr，用户可指定
+    m->tid = make_tid(*m->version_butex, slot);		// tid，bthread的唯一标识，m->version_butex 是bthread的同步机制，在这里主要用于bthread的join
+    m->set_stack(stk);					// bthread运行环境（栈和寄存器信息）
 
-    _cur_meta = m;									// _cur_meta当前group正在运行的bthread
-    _main_tid = m->tid;									// group默认的bthread，group空闲的时候运行的bthread，通过_cur_meta与_main_tid的比较判断group是否有bthread在运行
+    _cur_meta = m;					// _cur_meta当前group正在运行的bthread
+    _main_tid = m->tid;					// group默认的bthread，group空闲的时候运行的bthread，通过_cur_meta与_main_tid的比较判断group是否有bthread在运行
     _main_stack = stk;
     _last_run_ns = butil::cpuwide_time_ns();
     return 0;
