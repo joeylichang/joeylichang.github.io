@@ -8,7 +8,7 @@ bthread是M:N线程库，即bthrad : pthread 为 M : N（M >= N）。bthread的�
 * [TaskGroup](https://github.com/joeylichang/incubator-brpc/blob/master/src/bthread/task_group.h)：对应一个具体的pthread。
 * [TaskMeta](https://github.com/joeylichang/incubator-brpc/blob/master/src/bthread/task_meta.h)：bthread的元信息。
 * [ParkingLot](https://github.com/joeylichang/incubator-brpc/blob/master/src/bthread/parking_lot.h)
-	* TaskGroup之间的信号量机制。
+	* TaskGroup之间的条件变量机制。
 	* 为什么不用pthread_cond，系统调用会增加开销。
 	* 在哪些情况下使用：
 		1. 如果一个紧急的bthread被创建了，恰好当前pthread的bthread队列有任务且其他pthread空闲，通知其他pthread来steal bthread。
@@ -224,5 +224,5 @@ int TaskGroup::init(size_t runqueue_capacity) {
 2. TaskMeta、tid等很多数据结构在内存上都是用了version + offset的方式实现内存重用，详细见[brpc文档](https://github.com/joeylichang/incubator-brpc/blob/master/docs/cn/memory_management.md)。
 
 ### signal_task / wait_task
-1. signal_task / wait_task内部使用了ParkingLot完成了group之间的通信（ParkingLot实现了信号量机制）。
+1. signal_task / wait_task内部使用了ParkingLot完成了group之间的通信（ParkingLot实现了条件变量机制）。
 2. ParkingLot底层使用bthread实现的用户态futex（futex_wake_private、futex_wait_private），详情见[ParkingLot源码](https://github.com/joeylichang/incubator-brpc/blob/master/src/bthread/parking_lot.h)。
