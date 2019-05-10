@@ -202,7 +202,7 @@ int TaskGroup::init(size_t runqueue_capacity) {
     }
     m->stop = false;					// 是否停止的标志
     m->interrupted = false;				// 是否被其他bthread唤醒过，bthread_interrupt函数会操作该标志
-    m->about_to_quit = false;				// 是否即将推出
+    m->about_to_quit = false;				// 是否可以delay被调度
     m->fn = NULL;					// fn是创建bthread时用户传入的入口函数，arg是fn参数
     m->arg = NULL;
     m->local_storage = LOCAL_STORAGE_INIT;		// bthread的tls
