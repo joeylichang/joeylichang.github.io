@@ -1,4 +1,4 @@
-# Gossip协议
+# Gossip协议概述
 
 Gossip协议即谣言协议或者八卦协议，具有去中心化、最终一致、分布式容错等特点。在很多开源项目和国外的分布式系统中有很多应用，例如：Amazon S3、Amzon Dynamo、Cassandra、Redis、CockroachDB等等，其中相比较Google传统的GFS、BigTable、Spanner架构体系中常见的Paxos强一致协议，Amazon更青睐最终一致的Gossip协议。
 
