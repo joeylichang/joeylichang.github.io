@@ -33,5 +33,5 @@ gossip协议不需要节点知道所有其他节点，节点之间完全对等�
 ## RedisCluster
 RedisCluster是Redis开源项目提供的官方集群解方案，目前在一些国内的知名互联网公司中都有应用。RedisCluster通过Gossip协议实现了集群拓扑信息传播与管理、自动failover、透明数据迁移等。本文通过以下几部分介绍Gossip协议在RedisCluster中的实践：
 1. [RedisCluster tupo spread](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/ping_pong.md)
-2. [RedisCluster Failover](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/failover.md)
+2. [RedisCluster failover](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/failover.md)
 3. [RedisCluster data migrate](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/migrate.md)
