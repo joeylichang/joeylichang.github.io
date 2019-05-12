@@ -5,7 +5,7 @@
 * **分布式协议**
 	* Paxos ([PhxPaxos](https://blog.csdn.net/weixin_41713182/article/details/88147487))
 	* Raft (braft)
-	* Gossip (RedisCluster)
+	* Gossip ([RedisCluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/overview.md))
 * **RPC**
 	* [RPC概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/overview.md)
 	* [brpc](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/overview.md)
