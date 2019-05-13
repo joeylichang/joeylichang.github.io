@@ -1,7 +1,7 @@
 # RedisCluster Failover
 
  在介绍Failover只要需要先理解gossip协议中传播的两个版本号的含义，即currentEpoch、configEpoch，RedisCluster的Failover在[官方文档](https://redis.io/topics/cluster-spec)中有详细的介绍在这里只做方案的介绍，RedisCluster Failover分为三种：
-1. Failover：Gossip协议选出新主，数据可能有小部分无损。
+1. Failover：Gossip协议选出新主，数据可能有小部分损失。
 2. Failover Force：指定节点提升为主，无数据损失，短时无法响应用户请求，业务重试即可。
 3. Takeover：强制节点提升为主，数据大概率损失较大，常用于跨地域或者机房故障时跨地域、跨机房强制Failover。
 
