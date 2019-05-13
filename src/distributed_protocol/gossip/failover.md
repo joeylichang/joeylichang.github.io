@@ -16,7 +16,7 @@ _注意：configEpoch的变更严格的说是标识拓扑信息的变化，拓�
 
 
 ## Failover 
-RedisCluster默认的Failover是自动的，无需外部命令或者模块参与，对业务的影响也是最小的，其他的两种方式都是用来处理一些特殊场景，对业务相对影响较大。其他两种方式都是在默认Failover的基础上做了一定的删减。下面看一下默认的Failvoer流程：
+RedisCluster默认的Failover是自动的，无需外部命令或者模块参与。下面看一下默认的Failvoer流程：
 
 1. Failover发起条件
 	1. sharding内slave判断主故障，即Fail状态，必须有slave发起。
