@@ -12,7 +12,7 @@
 	* seastar
 * **Redis**
 	* Common architectures for Redis clusters
-	* Part of the source code analysis
+	* Source code analysis
 	* Twemproxy
 	* Twemcache
 * **RocksDB**
