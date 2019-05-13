@@ -16,7 +16,7 @@ Rediiscluster为了保证数据迁移对用户透明对slot增加了Migrating、
 4. 如果在迁移期间有用户请求，处理逻辑如下：
 	1. 如果访问key在源节点，直接在源节点操作。
 	2. 如果访问的key不在源节点且slot处于migrating状态，返回moving语义（包括目标节点的ip、port）。
-	3. 客户端收到moving语义之后向目标节点发送asking命令，目标节点会检查slot是否是importing状态，是的话返回同意，客户端可以直接向目标节点操作（新数据或者已经搬迁的都在目标处理），asking之后只能又一次操作之后再有请求还需先访问源重复上述步骤。
+	3. 客户端收到moving语义之后向目标节点发送asking命令，目标节点会检查slot是否是importing状态，是的话返回同意，客户端可以直接向目标节点操作（新数据或者已经搬迁的都在目标处理），asking之后只能有一次操作，之后再有请求还需先访问源节点，重复上述步骤。
 	4. 如果访问的key正在执行migrate命令，返回try_again。
 5. 迁移完成之后擦除目标、源节点slot的migrating、importing状态。
 
