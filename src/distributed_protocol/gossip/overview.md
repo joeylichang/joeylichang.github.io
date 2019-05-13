@@ -13,7 +13,7 @@ gossip协议不需要节点知道所有其他节点，节点之间完全对等�
 
 
 ### 最终一致
-根据上面的描述可以知道，所有节点状态收敛一致需要一段时间，这也是gossip被称作最终一致性协议的原因，这段时间的长短与集群中节点的数量成指数级增长，这也是gossip协议最受诟病的地方，但也不是没有没方案解决。Amazon S3单集群在全球的部数量达到10+w台物理机通过gossip协议管理节点就是例证，在[Redis常见集群架构》](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md#%E5%A4%A7%E8%A7%84%E6%A8%A1%E7%9A%84%E5%8E%BB%E4%B8%AD%E5%BF%83%E5%8C%96%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88)的文章中会尝试提出一种解决方案。
+根据上面的描述可以知道，所有节点状态收敛一致需要一段时间，这也是gossip被称作最终一致性协议的原因，这段时间的长短与集群中节点的数量成指数级增长，这也是gossip协议最受诟病的地方，但也不是没有没方案解决。Amazon S3单集群在全球的部数量达到10+w台物理机通过gossip协议管理节点就是例证，在[Redis常见集群架构](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md#%E5%A4%A7%E8%A7%84%E6%A8%A1%E7%9A%84%E5%8E%BB%E4%B8%AD%E5%BF%83%E5%8C%96%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88)中会尝试提出一种解决方案。
 
 在Gossip协议中节点越多，分布式容错能力越强，即可以容忍更多的节点同时故障（少于半数），故障的恢复时间越长。
 
