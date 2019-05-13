@@ -12,7 +12,7 @@ currentEpoch是一个全局的版本号通过Gossip协议传播收敛一致（pi
 
 如果说currentEpoch是一个逻辑版本号，每次集群发生Failover都会提升一次，那么configEpoch就是逻辑时钟的一个tag，他记录了每次Failover成功时刻的逻辑时钟，每个sharding内新主的出现不会是同一时刻（Gossip通过比较nodeid优先小的进行）所有configEpoch在每个节点内不重复，并且小于等于当前的currentEpoch。configEpoch主要的作用就是控制Failover的是逐个顺序进行。
 
-_注意：configEpoch的变更严格的说是标识拓扑信息的变化，拓扑信息的变化不仅仅实在Failover，还有Migrate下篇文章介绍_
+_注意：configEpoch的变更严格的说是标识拓扑信息的变化，拓扑信息的变化不仅仅是在Failover成功时刻，还有Data Migrate完成时刻，下篇文章介绍_
 
 
 ## Failover 
