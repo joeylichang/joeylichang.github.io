@@ -1,7 +1,7 @@
 # RedisCluster拓扑传播
 
 ## 拓扑数据结构
-在探讨RedisCluster实践Gossip之前，应该先明确RedisCluster需要Gossip传播什么样的信息，这个信息不仅可以帮助理解RedisCluster，更是Gossip协议性能分析的基础之一，如果消息很大Gossip协议传播必然会受影响，集群的收敛时间肯定慢。RedisCluster传播的数据的结构如下：
+在探讨RedisCluster实践Gossip之前，应该先明确RedisCluster需要Gossip传播什么样的信息，这个信息不仅可以帮助理解RedisCluster，更是Gossip协议性能分析的基础之一，如果消息很大Gossip协议传播性能必然会受影响，集群的收敛时间肯定慢。RedisCluster传播的数据的结构如下：
 
 ```
 typedef struct {
