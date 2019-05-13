@@ -12,7 +12,7 @@ Rediiscluster为了保证数据迁移对用户透明对slot增加了Migrating、
 
 1. 对需要迁移的slot在目标节点设置为importing状态。
 2. 对需要迁移的slot在源节点设置为migrating状态。
-3. 使用migrate命令在源dump一批key并进行压缩，在写入目标节点，整个过程是原子的，只有migrate保证成功之后才会删除这批key的数据。
+3. 使用migrate命令在源dump一批key并进行压缩，再写入目标节点，整个过程是原子的，只有migrate保证成功之后才会删除这批key的数据。
 4. 如果在迁移期间有用户请求，处理逻辑如下：
 	1. 如果访问key在源节点，直接在源节点操作。
 	2. 如果访问的key不在源节点且slot处于migrating状态，返回moving语义（包括目标节点的ip、port）。
