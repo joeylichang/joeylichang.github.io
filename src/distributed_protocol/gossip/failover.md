@@ -58,4 +58,4 @@ Failover Force是指定一个slave提升为master，常用于一些运维场景�
 ## Failover Takeover
 Failover Takeover是强制提升一个slave为master，没有投票过程、没有数据gap同步过程，直接currentEpoch提升通知集群有发生了主从切换。这里有一点需要注意，多个shardings同时进行Failover Takeover会有currentEpoch冲突的问题，虽然RedisCluster Gossip提供了currentEpoch冲突的解决方案，但是那样的收敛时间会非常长，建议还是逐个sharding进行。
 
-Failover Takeover的主要应用与某个地域或者某个机房故障场景，无法完成投票和数据gap协商，需要强制提升为master。
+Failover Takeover的主要应用于某个地域或者某个机房故障场景，无法完成投票和数据gap协商，需要强制提升为master。
