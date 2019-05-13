@@ -21,7 +21,7 @@ Rediiscluster为了保证数据迁移对用户透明对slot增加了Migrating、
 5. 迁移完成之后擦除目标、源节点slot的migrating、importing状态。
 
 ### 通知集群
-RedisCluster的拓扑信息都维护在clusterMsg中，概括起来主要是主从关系、slot归属。这两个发生了变化就需要RedisCluster Gossip在集群内传播，data migrate是的slot归属那个节点发生了变化，所以需要currentEpoch并想全集通广播传播。
+RedisCluster的拓扑信息都维护在clusterMsg中，概括起来主要是主从关系、slot归属。这两个发生了变化就需要RedisCluster Gossip在集群内传播，data migrate是的slot归属节点发生了变化，所以需要提升currentEpoch并向全集通广播传播。
 
 ### 风险
 RedisCluster的数据迁移主要目标是对用户透明，这使得他也暴露了一些其他问题：
