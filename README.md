@@ -11,7 +11,7 @@
 	* [brpc](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/overview.md)
 	* seastar
 * **Redis**
-	* Common architectures for Redis-Cluster
+	* [Common architectures for Redis-Cluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md)
 	* Source code analysis
 	* Twemproxy
 	* Twemcache
