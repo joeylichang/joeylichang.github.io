@@ -20,7 +20,7 @@ clusterMsgDataGossip结构体大小是96字节，每个节点内部会为集群�
 
 ## Ping、Pong
 RedisCluster采用的Push-Pull模式传播clusterMsgDataGossip数据，但是每次之传播10%的节点数据（10%的节点数少于3个传播3个）。RedisCluster内消息的发送与接收通过ping、pong包完成，具体逻辑如下：
-1. 当前节点在NODE_TIMEOUT/2 之内向所有的节点发送一遍ping包，ping包中包含10%节点的clusterMsgDataGossip数据，以及当前节点的信息描述clusterMsg（数据相对clusterMsgDataGossip更全面一下包括key映射的slot信息等）。
+1. 当前节点在NODE_TIMEOUT/2 之内向所有的节点发送一遍ping包，ping包中包含10%节点的clusterMsgDataGossip数据，以及当前节点的信息描述clusterMsg（数据相对clusterMsgDataGossip更全面一些包括key映射的slot信息等）。
 2. 其他节点收到ping之后即可恢复pong包，pong包的内容与ping相同即clusterMsg + 10%节点的clusterMsgDataGossip。
 3. 如果在NODE_TIMEOUT/2 没有收到某个节点的pong回复标记该节点为PFail，会在NODE_TIMEOUT/2之后立刻重建连接（防止因为连接问题导致未回复）再向其发送ping消息，如果在 TIME_OUT/2 内仍未回复pong，则标记该节点为Fail。
 
