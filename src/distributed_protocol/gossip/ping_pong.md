@@ -28,7 +28,7 @@ _注意：集群中每个节点都会执行上面的逻辑进行探测（Gossip�
 
 接下来看一下集群在一个周期内（NODE_TIMEOUT）的Gossip的发包量情况，假设集群包括800个节点，NODE_TIMEOUT为15s：
 * 一个节点在NODE_TIMEOUT/2 = 7.5s内需要发出799个ping包、接收799个pong包，每秒发送、接收106.5个ping包。
-* 全集群800个节点，集群美标发送、接收85.2k个数据包。
+* 全集群800个节点，集群每秒发送、接收85.2k个数据包。
 * 一个ping包包括一个clusterMsg和79个clusterMsgDataGossip，为方便起见clusterMsg和clusterMsgDataGossip都按100字节计算（clusterMsg大小在96 ~ 130左右字节之间，clusterMsgDataGossip比较固定96字节），一个ping包大小为8K。
 
 Reds是基于epoll + 回调的单线程处理模型，处理的连接数 和 数据量大小都是有限的，一个redis节点每秒处理106.5个8K的数据包（注意这里不包括用户的请求，redis单点可以处点每秒可以处理10w string类型用户请求已经成为共识）压力还是不小的，这也正是Gossip协议被诟病的点。
