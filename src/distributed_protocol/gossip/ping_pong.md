@@ -39,6 +39,6 @@ Redis官方给出的建议的是不超过1000个节点，在上述的跨地域�
 
 
 ## 节点加入
-RedisCluster加入新的节点通过联众途径：
+RedisCluster加入新的节点通过两种途径：
 1. 发送Cluster Meet（指定要加入节点的ip port）命令给集群中任意一个节点。
 2. 通过ping、pong传播，将新节点传播给其他节点，其他节点与新节点handshake。
