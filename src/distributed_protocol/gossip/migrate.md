@@ -1,7 +1,7 @@
 # RedisCluster data migrate
 
 ## key 组织方式
-RedisCluster的数据迁移是以slot粒度进行的，所以不得不介绍一下key的组织方式。RedisCluster的key通过slot进行组织，key经过crc校验和计算之后对16384（16KB）取摸作为key的归属slot，集群中每个sharding负责若干个slot。
+RedisCluster的数据迁移是以slot粒度进行的，需要先介绍一下key的组织方式。RedisCluster的key通过slot进行组织，key经过crc校验和计算之后对16384（16KB）取摸作为key的归属slot，集群中每个sharding负责若干个slot。
 
 Redis节点中除了通过字典维护一个全局的k-v表，为了方便数据的迁移会为每个当前节点负责的slot再维护一个数据结构用于存储每个slot有哪些key。一个key在redis节点中会被存储两份，造成了内存的一定浪费，例如：有的业务存储的sizeof(key) 大于 sizeof(value)，在最早的版本用的是也是字典后来优化为RadixTree（字典树的优化）来节省空间。
 
