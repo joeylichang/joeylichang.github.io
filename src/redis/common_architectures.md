@@ -5,7 +5,7 @@
 
 ![codis_arch](../../images/codis_arch.png)
 
-Codis凭借着容易上手、Dashbord简洁易用、扩缩容方便（操作codis-fe）等优点得到很多用户的认可。随着业务发展，数据量剧增，Codis也会暴露出一些问题：
+Codis凭借着容易上手等优点得到很多用户的认可(Coordinatorb包括codies-dashborad、codis-fe，元数据用zk或者etcd存储)。随着业务发展，数据量剧增，Codis也会暴露出一些问题：
 
 ##### 集群规模有限
 Codis中默认slot数量是1024（开源RedisCluster是16384个slot）。理论上集群中最多只能有1024个数据节点，随着数据量的增长，1024个数据节点显然是不够的。
