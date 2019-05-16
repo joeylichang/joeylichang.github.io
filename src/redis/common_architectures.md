@@ -3,6 +3,8 @@
 ## 中心化解决方案
 中心化解决方案指的是Redis集群除存储节点外，还有一个“Master小集群”负责管理Redis节点，也是比较典型的分布式存储解决方案。目前在业界比较流行的[Codis](https://github.com/CodisLabs/codis)即是中心化集群解决方案，Codis架构图如下：
 
+![codis_arch](../../images/codis_arch.png)
+
 Codis凭借着容易上手、Dashbord简洁易用、扩缩容方便（操作codis-fe）等优点得到很多用户的认可。随着业务发展，数据量剧增，Codis也会暴露出一些问题：
 
 ##### 集群规模有限
