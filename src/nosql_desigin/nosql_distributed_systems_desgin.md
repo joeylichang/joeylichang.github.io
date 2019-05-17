@@ -25,7 +25,7 @@
 * Paxos算法
 	* Google Chubby的作者Mike Burrows说过这个世界上只有一种一致性算法，那就是Paxos，其它的算法都是残次品。
 	* Paxos算法的目的是协调多个节点间数据达成一致，由于论文晦涩难懂并且论文中没有明确的实现步骤，几乎使得每一个Paxos的实现多多少少都有一些变形（基本也快成为业界共识），所以社区没有公认的项目完美的实现了Paxos，导致社区中使用的并不多。
-	* Paxos是唯一一个多主的强一致协议，即副本间不需要区分主从，详细介绍见（[Paxos概述](https://blog.csdn.net/weixin_41713182/article/details/88147487)）。
+	* Paxos是唯一一个多主的强一致协议，即副本间不需要区分主从，详细介绍见[Paxos概述](https://blog.csdn.net/weixin_41713182/article/details/88147487)。
 
 * Raft算法
 	* Raft是基于Paxos算法的改进，增加了选主逻辑，在日志复制和配置更新等方面做了一些约束。
