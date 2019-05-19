@@ -21,7 +21,7 @@ butex是bthread库提供的一种同步机制，目的是完成bthread与bthread
 		* uaddr是futex的指针，不同进程的指针值是不一样的。
 		* val是当前线程调用futex_wait获取的futex变量值，作用类似cas，因为多进程或者多线程编程中有时间片抢占问题，即调用futex_wait、futex_wake时和之前的判断值（1、0或者负数）之间有时间窗口值可能变化。如果不是之前的判断值val，需要调用处重试。
 
-## butex设计原理
+## butex设计思路
 本部分介绍的butex源码主要是针对上述futex的内核部分的设计（在butex中实现在了用户态，因为butex是用户态线程库），至于上述futex的用户态逻辑在后续的bthread_mutex中介绍。
 
 上述的futex变量在butex对应架构体Butex，Butex中除了计数器外还包括ButexWaiterList记录这个等待Butex同步变量的bthread，一个操作者这个list的锁。
