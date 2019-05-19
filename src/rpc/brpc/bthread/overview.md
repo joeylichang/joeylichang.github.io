@@ -15,9 +15,9 @@ bthread是brpc底层的线程库，保证了brpc的高性能，可以说brpc底�
 	* similar to futex
 	* bthread and bthread sync
 	* bthread and pthread sync
-* bthread_join
-	* bthread join with butex
 * bthread_interrupt
 	* bthread wakeup
+* bthread_join
+	* bthread join with butex
 * bthread_mutex
 	* bthread mutex whith butex
