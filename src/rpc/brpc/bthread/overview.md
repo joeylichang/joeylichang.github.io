@@ -19,5 +19,5 @@ bthread是brpc底层的线程库，保证了brpc的高性能，可以说brpc底�
 	* bthread wakeup
 * [bthread_join](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/bthread/bthread_join.md)
 	* bthread join with butex
-* [bthread_mutex](https://github.com/joeylichang/joeylichang.github.io/tree/master/src/rpc/brpc/bthread)
+* [bthread_mutex](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/bthread/bthread_mutex.md)
 	* bthread mutex whith butex
