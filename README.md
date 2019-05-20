@@ -4,7 +4,7 @@
 
 * **Distributed protocol**
 	* Paxos ([PhxPaxos](https://blog.csdn.net/weixin_41713182/article/details/88147487))
-	* Raft (braft)
+	* Raft ([braft](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/raft/overview.md))
 	* Gossip ([RedisCluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/overview.md))
 * **RPC**
 	* [Summary of the RPC](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/overview.md)
