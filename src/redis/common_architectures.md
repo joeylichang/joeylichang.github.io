@@ -30,7 +30,7 @@ Amazon S3内部使用Amazon自研的一个基础服务Doxy来管理数据节点�
 Doxy与数据节点通过心跳探测收集节点的信息，节点如果有变更会在Doxy内部通过Gossip协议传播并收敛一致，当收敛一致时推送给master（或者master定期去Doxy拉取）。关于Doxy有几点说明如下：
 
 ##### Doxy规模
-Doxy的规模远小于数据节点，Doxy只通过心跳与数据节点交互收集少量的元数据，所以节点数不会过多，这样通过Gossip协议传播收敛时间会很短，如[Gossip协议概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/overview.md)介绍480数据节点在bj、nj、gz三地域部署收敛时间在5s以内，如果集群规模在几十台可以做到1s内深圳毫秒级别收敛一致，是可以保证高可用的。
+Doxy的规模远小于数据节点，Doxy只通过心跳与数据节点交互收集少量的元数据，所以节点数不会过多，这样通过Gossip协议传播收敛时间会很短，如[Gossip协议概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/overview.md)介绍480数据节点在bj、nj、gz三地域部署收敛时间在5s以内，如果集群规模在几十台可以做到1s内甚至毫秒级别收敛一致，是可以保证高可用的。
 
 ##### Doxy可跨地域部署
 正如上述跨地域部署数据收敛时间相当可观，对于强一致协议（Paxos、Raft）是望尘莫及的，跨地域网络抖动（常态）强一致协议的性能很那保证，强一致协议一般是3或5个节点扩展到几十台的规模性能更会是问题。Amazon S3是单集群全球部署，显然强一致协议是做不到的。
