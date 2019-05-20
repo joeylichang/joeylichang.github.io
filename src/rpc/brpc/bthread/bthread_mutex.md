@@ -58,10 +58,10 @@ int bthread_mutex_lock(bthread_mutex_t* m) {
     }
 }
 
-const MutexInternal MUTEX_CONTENDED_RAW = {{1},{1},0};
-const MutexInternal MUTEX_LOCKED_RAW = {{1},{0},0};
-#define BTHREAD_MUTEX_CONTENDED (*(const unsigned*)&bthread::MUTEX_CONTENDED_RAW)
-#define BTHREAD_MUTEX_LOCKED (*(const unsigned*)&bthread::MUTEX_LOCKED_RAW)
+// const MutexInternal MUTEX_CONTENDED_RAW = {{1},{1},0};
+// const MutexInternal MUTEX_LOCKED_RAW = {{1},{0},0};
+// #define BTHREAD_MUTEX_CONTENDED (*(const unsigned*)&bthread::MUTEX_CONTENDED_RAW)
+// #define BTHREAD_MUTEX_LOCKED (*(const unsigned*)&bthread::MUTEX_LOCKED_RAW)
 
 inline int mutex_lock_contended(bthread_mutex_t* m) {
     butil::atomic<unsigned>* whole = (butil::atomic<unsigned>*)m->butex;
