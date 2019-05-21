@@ -27,7 +27,17 @@ _注意：Term相当于逻辑时钟，每次选举会加1，每个Term内之多�
 
 ##### 投票请求 RPC（RequestVote RPC）
 
-![raft_vote_rpc.png](../../../images/raft_vote_rpc.png)
+| 参数 | 解释|
+|---|---|
+|term| 候选人的任期号|
+|candidateId| 请求选票的候选人的 Id |
+|lastLogIndex| 候选人的最后日志条目的索引值|
+|lastLogTerm| 候选人最后日志条目的任期号|
+
+| 返回值| 解释|
+|---|---|
+|term| 当前任期号，以便于候选人去更新自己的任期号|
+|voteGranted| 候选人赢得了此张选票时为真|
 
 1. 如果req.term < currentTerm，返回false。
 2. 如果voteFor为空或者等于req.candudateId，并且req的日志至少比当前节点的新（先比较lastLogTerm在比较lastLogIndex），则返回true。
@@ -54,7 +64,19 @@ Term是选举的逻辑时钟，每轮选举之前都会被复制为currentTerm++
 
 ##### 附加日志远程过程调用 （AppendEntries RPC）
 
-![raft_append_rpc](../../../images/raft_append_rpc.png)
+| 参数 | 解释 |
+|----|----|
+|term| 领导人的任期号|
+|leaderId| 领导人的 Id，以便于跟随者重定向请求|
+|prevLogIndex|新的日志条目紧随之前的索引值|
+|prevLogTerm|prevLogIndex 条目的任期号|
+|entries[]|准备存储的日志条目（表示心跳时为空；一次性发送多个是为了提高效率）|
+|leaderCommit|领导人已经提交的日志的索引值|
+
+| 返回值| 解释|
+|---|---|
+|term|当前的任期号，用于领导人去更新自己|
+|success|跟随者包含了匹配上 prevLogIndex 和 prevLogTerm 的日志时为真|
 
 ### 安全性
 
@@ -81,9 +103,23 @@ Term是选举的逻辑时钟，每轮选举之前都会被复制为currentTerm++
 * 状态机安全
 	* 如果一个日志被状态机执行，那么其他节点该位置的日志不会有不同的日志条目。
 
-##### 数据持储存
+##### 数据储存
 
-![raft_store](../../../images/raft_store.png)
+|状态|所有服务器上持久存在的|
+|-------|------|
+|currentTerm | 服务器最后一次知道的任期号（初始化为 0，持续递增）|
+|votedFor | 在当前获得选票的候选人的 Id|
+| log[] | 日志条目集；每一个条目包含一个用户状态机执行的指令，和收到时的任期号 |
+
+|状态|所有服务器上经常变的|
+|-------|------|
+| commitIndex| 已知的最大的已经被提交的日志条目的索引值|
+| lastApplied| 最后被应用到状态机的日志条目索引值（初始化为 0，持续递增）|
+
+| 状态 | 在领导人里经常改变的 （选举后重新初始化）|
+|----|--------|
+| nextIndex[] | 对于每一个服务器，需要发送给他的下一个日志条目的索引值（初始化为领导人最后索引值加一）|
+| matchIndex[] | 对于每一个服务器，已经复制给他的日志的最高索引值|
 
 ##### 各角色处理流程
 * Follower
