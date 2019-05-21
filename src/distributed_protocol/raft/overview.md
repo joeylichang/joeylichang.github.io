@@ -11,7 +11,7 @@ Raft凭借着简单易懂得到业界青睐，同时Raft论文给出了明确的
 ### Leader选举
 Raft中节点状态转换关系如下图所示：
 
-![raft_state](../../../images/raft_append_rpc.png)
+![raft_state](../../../images/raft_state.png)
 
 
 ##### 投票过程
