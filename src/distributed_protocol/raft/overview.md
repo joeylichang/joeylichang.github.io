@@ -5,7 +5,7 @@ Raft凭借着简单易懂得到业界青睐，同时Raft论文给出了明确的
 基于以上原因业界在一致性协议的选择中更青睐与Raft，例如：TiDB、CockroachDB等开源项目都选择Raft作为sharding内主从的一致性协议。Raft严格意义上说算是Paxos的一个简化版本，在正常情况下性能与Paxos相当，但是由于增加选主的逻辑使得在主从切换时无法响应用户请求影响可用性，这一点上Paxos的表现会更好一些。本文选取百度开源的braft进行介绍，[braft](https://github.com/joeylichang/braft)基于[brpc](https://github.com/joeylichang/incubator-brpc)实现，在百度内部的生产环境得到了充分的验证，在性能、稳定性、可运维性上更可靠。
 
 ## braft
-braft是基于Raft论文的工程实现，在工程实践上做了一些完善和优化，主要包括：
+braft是基于Raft论文的工程实现，在工程实践上做了一些完善和优化，主要包括(详细介绍见[BRAFT介绍](https://github.com/brpc/braft/blob/master/docs/cn/raft_protocol.md))：
 * pre-vote
 	* 网络分区情况下，分区节点会不断尝试提升Term进行选主，在网络恢复正常后会扰乱正常的分组。
 	* 增加pre-vote阶段，在选主之前先询问其他节点的是否普有eader。
