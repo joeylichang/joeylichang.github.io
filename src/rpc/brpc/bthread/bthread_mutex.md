@@ -57,6 +57,10 @@ int bthread_mutex_lock(bthread_mutex_t* m) {
         return bthread::mutex_lock_contended(m);
     }
 }
+// const MutexInternal MUTEX_CONTENDED_RAW = {1,1,0};
+// const MutexInternal MUTEX_LOCKED_RAW = {1,0,0};
+// #define BTHREAD_MUTEX_CONTENDED (*(const unsigned*)&bthread::MUTEX_CONTENDED_RAW)
+// #define BTHREAD_MUTEX_LOCKED (*(const unsigned*)&bthread::MUTEX_LOCKED_RAW)
 
 inline int mutex_lock_contended(bthread_mutex_t* m) {
     butil::atomic<unsigned>* whole = (butil::atomic<unsigned>*)m->butex;
@@ -73,7 +77,7 @@ inline int mutex_lock_contended(bthread_mutex_t* m) {
 ```
 
 1. #1用1替换MutexInternal的locked变量，如果之前的值是0，表示当前锁没有被占用直接返回。
-2. 否则当前的锁有人被占用，#2用{{1},{1},0}替换之前值如果之前的lock变量仍未1，表示#1与#2之间的时间窗口内锁没有释放或者释放了又被其他bthred占用了（lock变量的作用就是针对时间窗口的）。
+2. 否则当前的锁有人被占用，#2用{1,1,0}替换之前值如果之前的lock变量仍未1，表示#1与#2之间的时间窗口内锁没有释放或者释放了又被其他bthred占用了（lock变量的作用就是针对时间窗口的）。
 3. #3调用butex_wait等待锁的释放。
 
 ### bthread_mutex_unlock
