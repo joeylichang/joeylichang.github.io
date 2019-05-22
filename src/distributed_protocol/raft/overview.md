@@ -5,12 +5,32 @@ Raft凭借着简单易懂得到业界青睐，同时Raft论文给出了明确的
 基于以上原因业界在一致性协议的选择中更青睐与Raft，例如：TiDB、CockroachDB等开源项目都选择Raft作为sharding内主从的一致性协议。Raft严格意义上说算是Paxos的一个简化版本，在正常情况下性能与Paxos相当，但是由于增加选主的逻辑使得在主从切换时无法响应用户请求影响可用性，这一点上Paxos的表现会更好一些。本文选取百度开源的braft进行介绍，[braft](https://github.com/joeylichang/braft)基于[brpc](https://github.com/joeylichang/incubator-brpc)实现，在百度内部的生产环境得到了充分的验证，在性能、稳定性、可运维性上更可靠。
 
 ## braft
+braft是基于Raft论文的工程实现，在工程实践上做了一些完善和优化，主要包括：
+* pre-vote
+	* 网络分区情况下，分区节点会不断尝试提升Term进行选主，在网络恢复正常后会扰乱正常的分组。
+	* 增加pre-vote阶段，在选主之前先询问其他节点的是否普有eader。
+* transfer leadership
+	* 尽量无损的完成主从切换。
+* setpeer
+	* 设置复制组成员，在极端情况下（只有一个节点正常运行）保证正常服务。
+* 指定节点进行Snapshot
+	* 指定节点创建Snapshot，其他节点来拉去防止所有节点都创建Snapshot影响消费日志的性能。
+* 静默模式
+	* 减少节点之间的心跳（一台机器多个分组发送心跳时，网络包成指数级增长）。
+* 节点分级
+	* 增加一个节点级别，该级别的节点不猜与选主和日志复制，只负责异步拉去某一个节点的日志进行消费（某些业务度量大不要求严格线程一致）。
+* pipeline
+	* 主从复制使用pipeline方式，提高屯出性能。
+* Leader慢节点优化
+	* Leader的日志落盘和异步复制给follower并行。
+	* 潜在问题是重启之后从落盘读起来的日志可能还没有commited，但是不影响数据一致性，为了防止脏读braft做了处理。
+* 本地IO Batch写入
 
+本文主要分一下几部分介绍braft：
 
-## Raft协议概述
 在正式介绍braft之前有必要概要性的回顾一下Raft协议的内容，raft的相关资料已经很多了（[raft官网](https://raft.github.io/)、[raft论文](https://raft.github.io/raft.pdf)、[动画演示](http://thesecretlivesofdata.com/raft/)）本文只对协议中核心的部分进行介绍方便后续对braft的源码理解。
 
-
+## Raft协议概述
 ### Leader选举
 Raft中节点状态转换关系如下图所示：
 
