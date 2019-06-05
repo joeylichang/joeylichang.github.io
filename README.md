@@ -9,7 +9,7 @@
 * **RPC**
 	* [Summary of the RPC](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/overview.md)
 	* [brpc](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/brpc/overview.md)
-	* seastar
+	* [seastar](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/seastar/seastar.md)
 * **Redis**
 	* [Common architectures for Redis-Cluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md)
 	* Source code analysis
