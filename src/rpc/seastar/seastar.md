@@ -16,6 +16,7 @@ seastar针对提升性能和使用做了以下几点设计：
 
 ## seastar设计
 seastar的网络线程模型图如下：
+![seastar](../../../images/seastar.png)
 
 seastar与brpc一样没有区分网络I/O、CPU、磁盘I/O线程，根据请求落在的Core三者共用一个线程，避免了cache一致性导致的性能损耗，可以做到性能随着Core的增加成线性增长。每个Core上的主逻辑运行的是拆分后的Fetures链（可以理解为协程中的子任务遇到堵塞，则会切换其他的子任务）。
 seastar的内存设计理念是share nothing，给每个Core分配足够的内存（无需锁提升性能），框架禁止跨核数据拷贝（通过消息实现）。
