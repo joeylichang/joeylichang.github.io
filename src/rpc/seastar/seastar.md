@@ -1,4 +1,4 @@
-# seastar概述
+# seastar介绍
 
 ## seastar前世今生
 seasatr虽然是一个高性能的RPC框架，不过它的诞生渊源最早可以追溯到Google BigTable 和 Amazon DynamoDB。Avinash Lakshman是DynamoDB的作者之一，之后在Facebook主持开发了Cassandra，Cassandra主要用于储存收件箱等简单格式数据，于2008年开源交给Apache基金会管理。Cassandra在数据模型上参考了Google BigTable，在分布式架构上参考了Amazon DynamoDB，Amazon DynamoDB（后续介绍）可以很好的支持集群规模变化。Cassandra由java编写存在GC问题，KVM作者Avi Kivity创办Scylla公司开源[scylladb](https://www.scylladb.com/)，scylladb完全兼容Cassandra接口。为了进一步提升scylladb性能，Avi Kivity团队针对现代计算机体系结构开发了新的RPC框架——seastar。
