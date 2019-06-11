@@ -36,4 +36,4 @@ Dynamo需要运行在异质硬件环境上，能够在各种故障（硬件的�
 6. 不停写
 	* Dynamo通过NWR方案权衡读写的性能，如果Sharding内可用副本数少于配置的W个数写会收到影响，Dynamo可以保证只有有节点存活就不会停止写，保证了写的高可用。
 
-后续文章会详细介绍Dynamo的分布式设计方案，在最后还会重新审视上述特点（或者说设计目标）是如何实现的。
+[后续文章](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)会详细介绍Dynamo的分布式设计方案，在最后还会重新审视上述特点（或者说设计目标）是如何实现的。
