@@ -17,6 +17,8 @@
 	* Twemcache
 * **RocksDB**
 * **DynamoDB**
+	* [概述]（https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md）
+	* [分布式架构设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
 * **CockroachDB**
 * **Reading notes**
 	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
