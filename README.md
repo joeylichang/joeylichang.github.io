@@ -20,6 +20,10 @@
 	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
 	* [分布式架构设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
 * **CockroachDB**
+	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/overview.md)
+	* [存储层](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_kv.md)
+	* [分布式事务](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md)
+	* [SQL-KV映射](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_sql.md)
 * **Reading notes**
 	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
 	* [数据密集型应用系统设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/data_intensive_sys_desgin/navigatiom.md)
