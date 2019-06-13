@@ -12,10 +12,9 @@
 	* [seastar](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/seastar/seastar.md)
 * **Redis**
 	* [Common architectures for Redis-Cluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md)
-	* Source code analysis
 	* Twemproxy
 	* Twemcache
-* **RocksDB**
+	* RocksDB
 * **DynamoDB**
 	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
 	* [分布式架构设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
