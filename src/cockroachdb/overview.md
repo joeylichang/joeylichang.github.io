@@ -10,8 +10,6 @@
 1. SQL映射层：负责将解析、优化SQL语义映射到底层KV存储，并且负责协调事务。
 2. 路由层：CockroachDB采用二级索引的方式将路由信息存储在数据分片内，根据路由信息定位具体的KV存储节点。
 3. 节点状态管理层：一个物理节点对应一个Node，CockroachDB使用Gossip协议管理节点状态和路由信息。
-4. 存储引擎层：一个Node对应多个Store（一般一个物理盘对应一个Store），CockroachDB使用rocks作为单机的存储引擎（一个Range对一个一个RocksDB）。
+4. 存储引擎层：一个Node对应多个Store（一般一个物理盘对应一个Store），CockroachDB使用rocks作为单机的存储引擎,一个Store对应一个RocksDB实例。
 5. 副本管理层：一个Store管理若干个Range，Range是最小的数据存储单位（64M）存储用户数据，CockroachDB使用raft强一致协议负责副本间的数据同步。
 6. HLC时钟算法：数据存储使用了MVCC（多版本控制）机制存储一份数据的多个版本，数据冲突解决方案使用HLC算法（用于事务协调）。
-
-后续文章将针对上述几层详细介绍。
