@@ -27,7 +27,7 @@ Goosip的消息传播分为两种模式：
 
 之前介绍的RedisCluster在心跳检测中ping、pong、新节点加入中使用的反熵模式，在failover、migrate使用的是谣言传播模式。CockroachDB同样适用两者相结合的方式，在Schema元数据变更时使用谣言传播模式，在Node探活、路由信息等使用反熵模式。
 
-CockroachDB官网根据路由组织方式（后面介绍）给出理论上可以支持1w节点规模，根据之前ReddisCluster的介绍，单条记录大小100B的800节点已经是[RedisGossip](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/ping_pong.md#pingpong)的生产环境上线。CockroachDB传播的数据结构见[CockroachDB Gossip RPC](https://github.com/cockroachdb/cockroach/blob/master/pkg/gossip/gossip.proto)，在单节点的情况下大于100B，故官网的数据有待验证，目前业界已知比较大规模的集群是10个节点4T数据（百度图搜业务）。
+CockroachDB官网根据路由组织方式（后面介绍）给出理论上可以支持1w节点规模，根据之前ReddisCluster的介绍，单条记录大小100B的800节点已经是[RedisGossip](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/ping_pong.md#pingpong)的生产环境上线。CockroachDB传播的数据结构见[CockroachDB Gossip RPC](https://github.com/cockroachdb/cockroach/blob/master/pkg/gossip/gossip.proto)，在单节点的情况下大于100B，故官网的数据有待验证，目前业界已知比较大规模的集群是10个节点4T数据。
 
 
 ## 路由管理
