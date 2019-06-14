@@ -29,7 +29,7 @@ CockroachDB使用MVCC（多版本控制）实现分布式事务的高并发，�
 4. 原子钟 + GPS：需要硬件支持（Google Spanner），可以做到集群所有节点时钟严格一致。
 
 HLC时钟使用逻辑时钟 + 物理时钟，伪代码如下：
-![hlc]()
+![hlc](../../images/cockroach_hlc.png)
 
 * 发送数据或者本地更新数据
 	* 更新物理时间如果发生跳变选择最大的。
