@@ -26,7 +26,7 @@ braft是基于Raft论文的工程实现，在工程实践上做了一些完善�
 	* 潜在问题是重启之后从落盘读起来的日志可能还没有commited，但是不影响数据一致性，为了防止脏读braft做了处理。
 * 本地IO Batch写入
 
-本文主要分一下几部分介绍braft：
+本文主要分以下几部分介绍braft：
 
 在正式介绍braft之前有必要概要性的回顾一下Raft协议的内容，raft的相关资料已经很多了（[raft官网](https://raft.github.io/)、[raft论文](https://raft.github.io/raft.pdf)、[动画演示](http://thesecretlivesofdata.com/raft/)）本文只对协议中核心的部分进行介绍方便后续对braft的源码理解。
 
