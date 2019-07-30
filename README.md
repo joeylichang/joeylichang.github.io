@@ -12,7 +12,7 @@
 	* [seastar](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/rpc/seastar/seastar.md)
 * **Redis**
 	* [Common Architectures for Redis-Cluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/common_architectures.md)
-	* Twemproxy
+	* [Twemproxy](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/redis/twemproxy.md)
 	* Twemcache
 	* RocksDB
 * **DynamoDB**
