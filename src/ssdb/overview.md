@@ -18,13 +18,13 @@
 
 
 
-![ssdb_get_qps](../../images/ssdb_get_qps.png)
+<img src="../../images/ssdb_get_qps.png" alt="ssdb_get_qps" style="zoom:50%;" />
 
 
 
 ## SET-QPS
 
-![ssdb_set_qps](../../images/ssdb_set_qps.png)
+<img src="../../images/ssdb_set_qps.png" alt="ssdb_set_qps" style="zoom:50%;" />
 
 
 
@@ -32,7 +32,7 @@
 
 
 
-![ssdb_time](../../images/ssdb_time.png)
+<img src="../../images/ssdb_time.png" alt="ssdb_time" style="zoom:50%;" />
 
 
 
