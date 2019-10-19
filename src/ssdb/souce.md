@@ -53,7 +53,7 @@ SSDB-OPT对于Redis的数据类型实现有了较大的变更（上述源码与�
 
 重点介绍以下几部分：
 
-1. BackendDump
+1. [BackendDump](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/ssdb/backend_dump.md)
 2. BackendSync
 3. ExpirationHandler
 4. SSDBCluster
