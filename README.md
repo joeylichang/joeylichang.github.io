@@ -19,7 +19,7 @@
 	* 源码解析 
 	* 数据搬迁
 	* 主从切换
-	* leveldb
+	* LevelDB
 	* RocksDB
 * **DynamoDB**
 	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
