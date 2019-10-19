@@ -24,11 +24,11 @@ SSDBServer
                       |_SSDB *db;
                       |_SSDBServer *server;
                       |_RangeMigrate *migrator;				/* 数据搬迁，按slot粒度*/
-                                  |_SSDB_BinLog
-                                  |_SSDB *ssdb;
-                                  |_ExpirationHandler			/* 数据搬迁期间需要关闭过期删除线程 */
-                                  |_Client				/* 数据搬迁期间的client，既发送端 */
-                                  |_Server				/* 数据搬迁期间的server，既接收端 */
+                            |_SSDB_BinLog
+                            |_SSDB *ssdb;
+                            |_ExpirationHandler			/* 数据搬迁期间需要关闭过期删除线程 */
+                            |_Client				/* 数据搬迁期间的client，既发送端 */
+                            |_Server				/* 数据搬迁期间的server，既接收端 */
 	|_NetworkServer	                	/* 网络层 */
 		|_Link
   		|_RedisLink			/* reids协议解析 */
