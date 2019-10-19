@@ -51,7 +51,7 @@ SSDBServer
 
 SSDB-OPT对于Redis的数据类型实现有了较大的变更（上述源码与开元SSDB也有较大优化，例如SSDBCluster，metaDB等），后续有时间补充关于数据类型的设计。
 
-重点介绍一下几部分：
+重点介绍以下几部分：
 
 1. BackendDump
 2. BackendSync
