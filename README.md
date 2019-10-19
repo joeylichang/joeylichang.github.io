@@ -16,16 +16,16 @@
 	* Twemcache
 	* RocksDB
 * **SSDB**
-	* 概述
-	* 源码解析
+	* overview
+	* source code
 	* LevelDB
 * **DynamoDB**
-	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
-	* [分布式架构设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
+	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
+	* [distributed architecture design](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
 * **CockroachDB**
-	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/overview.md)
-	* [存储层](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_kv.md)
-	* [分布式事务](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md)
+	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/overview.md)
+	* [storage layer design](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_kv.md)
+	* [distributed transaction](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md)
 * **SeaweedFS**
 * **Reading notes**
 	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
