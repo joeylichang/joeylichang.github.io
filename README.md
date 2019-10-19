@@ -20,6 +20,7 @@
 	* 源码解析 
 	* 数据搬迁
 	* 主从切换
+	* leveldb
 * **DynamoDB**
 	* [概述](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/overview.md)
 	* [分布式架构设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/dynamo/desgin.md)
