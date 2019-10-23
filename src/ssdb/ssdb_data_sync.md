@@ -58,7 +58,7 @@ public:
 ```c++
 class BinlogCommand{
 public:
-  static const char BEGIN	= 7;         \\ 同步snapshot开始
+  static const char BEGIN	= 7;           \\ 同步snapshot开始
 	static const char END	= 8;           \\ 同步snapshot结束
 	static const char ACK	= 9;           \\ 数据搬迁成功之后的ACK
    
