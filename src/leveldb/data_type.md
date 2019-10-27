@@ -12,12 +12,12 @@ DB在每次compact之后都有sst等元信息变更（增加、删除等）。sn
 
 ```c++
 class VersionEdit {
-	typedef std::set< std::pair<int, uint64_t> > DeletedFileSet;		// 删除文件的map，level-> file_number
+  typedef std::set< std::pair<int, uint64_t> > DeletedFileSet;		// 删除文件的map，level-> file_number
 
-  std::string comparator_;					// 比较器，可以用户自定义，默认字典序
-  uint64_t log_number_;							// 当前binlog的file_number，compact level 0时用到
-  uint64_t prev_log_number_;				// 前一个binlog的file_number
-  uint64_t next_file_number_;				// 下一个binlog的file_number
+  std::string comparator_;			// 比较器，可以用户自定义，默认字典序
+  uint64_t log_number_;				// 当前binlog的file_number，compact level 0时用到
+  uint64_t prev_log_number_;			// 前一个binlog的file_number
+  uint64_t next_file_number_;			// 下一个binlog的file_number
   SequenceNumber last_sequence_;		// binlog的seq
   bool has_comparator_;							
   bool has_log_number_;							
@@ -26,8 +26,8 @@ class VersionEdit {
   bool has_last_sequence_;					
 
   std::vector< std::pair<int, InternalKey> > compact_pointers_;		// 记录压缩的进度，level -> key
-  DeletedFileSet deleted_files_;																	// 压缩后需要删除的文件
-  std::vector< std::pair<int, FileMetaData> > new_files_;					// 压缩后新生成的文件
+  DeletedFileSet deleted_files_;					// 压缩后需要删除的文件
+  std::vector< std::pair<int, FileMetaData> > new_files_;		// 压缩后新生成的文件
 }
 ```
 
@@ -37,7 +37,7 @@ class VersionEdit {
 
 ```C++
 class Version {
-	VersionSet* vset_;            // VersionSet to which this Version belongs
+	VersionSet* vset_;      // VersionSet to which this Version belongs
   Version* next_;               // Next version in linked list
   Version* prev_;               // Previous version in linked list
   int refs_;                    // Number of live refs to this version
@@ -81,22 +81,22 @@ struct FileMetaData {
 
 ```c++
 class VersionSet {
-	Env* const env_;											// leveldb 考虑到跨平台兼容性对系统调用做了一层封装
-  const std::string dbname_;						// open时指定
-  const Options* const options_;				// 用户传入的自定义选项
-  TableCache* const table_cache_;				// 可以通过Options自定义，默认lru
+  Env* const env_;				// leveldb 考虑到跨平台兼容性对系统调用做了一层封装
+  const std::string dbname_;			// open时指定
+  const Options* const options_;		// 用户传入的自定义选项
+  TableCache* const table_cache_;		// 可以通过Options自定义，默认lru
   const InternalKeyComparator icmp_;		// 可以通过Options自定义，默认字典序
-  uint64_t next_file_number_;						// sst文件号，递增
-  uint64_t manifest_file_number_;				// 自增
-  uint64_t last_sequence_;							// 
-  uint64_t log_number_;									// 
-  uint64_t prev_log_number_;  					// 0 or backing store for memtable being compacted
+  uint64_t next_file_number_;			// sst文件号，递增
+  uint64_t manifest_file_number_;		// 自增
+  uint64_t last_sequence_;			// 
+  uint64_t log_number_;				// 
+  uint64_t prev_log_number_;  			// 0 or backing store for memtable being compacted
 
   // Opened lazily
-  WritableFile* descriptor_file_;				// manifest
-  log::Writer* descriptor_log_;         // 对descriptor_file_写入的封装
-  Version dummy_versions_;  						// Head of circular doubly-linked list of versions.
-  Version* current_;        						// == dummy_versions_.prev_
+  WritableFile* descriptor_file_;		// manifest
+  log::Writer* descriptor_log_;         	// 对descriptor_file_写入的封装
+  Version dummy_versions_;  			// Head of circular doubly-linked list of versions.
+  Version* current_;        			// == dummy_versions_.prev_
 
   // Per-level key at which the next compaction at that level should start.
   // Either an empty string, or a valid InternalKey.
