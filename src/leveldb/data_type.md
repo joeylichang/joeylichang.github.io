@@ -1,6 +1,4 @@
-# LevelDB 主要的数据结构
-
-### DB元信息
+# LevelDB 元信息
 
 DB在每次compact之后都有sst等元信息变更（增加、删除等）。snapshot针对某一时刻的db数据快照，每次compact之后又不能删除之前snapshot的数据，需要一个机制DB的变更清理无用数据，保留必要数据。
 
