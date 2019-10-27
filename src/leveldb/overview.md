@@ -54,7 +54,7 @@ level > 0，从level中选出一个文件，通过其key范围在level + 1层选
 
 下面针对几部分重点开一下LevelDB的实现：
 
-1. data struct
+1. [data struct](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/data_type.md)
 2. open db
 3. compact operation
 4. write operation
