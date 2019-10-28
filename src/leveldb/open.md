@@ -20,26 +20,26 @@ Open内部的主要流程如下：
 
 ```c++
 DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
-    : env_(raw_options.env),																// 系统环境封装，一般使用默认值即可
-      internal_comparator_(raw_options.comparator),					// 比较器，默认字典序
-      internal_filter_policy_(raw_options.filter_policy),		// 默认boolm过滤器
+    : env_(raw_options.env),					// 系统环境封装，一般使用默认值即可
+      internal_comparator_(raw_options.comparator),		// 比较器，默认字典序
+      internal_filter_policy_(raw_options.filter_policy),	// 默认boolm过滤器
       options_(SanitizeOptions(dbname, &internal_comparator_,	
                 &internal_filter_policy_, raw_options)),
-      owns_info_log_(options_.info_log != raw_options.info_log),		// 运行之日，默认LOG，在SanitizeOptions初始化时，会将上次的LOG rename为LOG.old
+      owns_info_log_(options_.info_log != raw_options.info_log),	// 运行之日，默认LOG，在SanitizeOptions初始化时，会将上次的LOG rename为LOG.old
       owns_cache_(options_.block_cache != raw_options.block_cache),	// 
-      dbname_(dbname),									// db name
-      db_lock_(NULL),										// 文件锁
-      shutting_down_(NULL),							// shut down标志
-      bg_cv_(&mutex_),									// 压缩线程与主线程之间同步的信号量
-      mem_(new MemTable(internal_comparator_)),		// memtable
-      imm_(NULL),												// immutable
-      logfile_(NULL),										// binlog
-      logfile_number_(0),								// binlog file number，递增
-      log_(NULL),												// log::Writer写binlog用的
-      seed_(0),													// 迭代器使用(后续介绍)
-      tmp_batch_(new WriteBatch),				// write batch
-      bg_compaction_scheduled_(false),	// 是否有compact金正
-      manual_compaction_(NULL) {				// compact_range
+      dbname_(dbname),							// db name
+      db_lock_(NULL),							// 文件锁
+      shutting_down_(NULL),						// shut down标志
+      bg_cv_(&mutex_),							// 压缩线程与主线程之间同步的信号量
+      mem_(new MemTable(internal_comparator_)),				// memtable
+      imm_(NULL),							// immutable
+      logfile_(NULL),							// binlog
+      logfile_number_(0),						// binlog file number，递增
+      log_(NULL),							// log::Writer写binlog用的
+      seed_(0),								// 迭代器使用(后续介绍)
+      tmp_batch_(new WriteBatch),					// write batch
+      bg_compaction_scheduled_(false),					// 是否有compact金正
+      manual_compaction_(NULL) {					// compact_range
   mem_->Ref();
   has_imm_.Release_Store(NULL);
 
@@ -48,7 +48,7 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
   const int table_cache_size = options_.max_open_files - kNumNonTableCacheFiles;
   table_cache_ = new TableCache(dbname_, &options_, table_cache_size);
 
-	// VersionSet 记录了DB的变更记录
+  // VersionSet 记录了DB的变更记录
   versions_ = new VersionSet(dbname_, &options_, table_cache_,
                              &internal_comparator_);
 }
@@ -69,7 +69,7 @@ Status DBImpl::Recover(VersionEdit* edit) {
   if (s.ok()) {
     SequenceNumber max_sequence(0);
     
-		// PrevLogNumber 兼容老版本
+    // PrevLogNumber 兼容老版本
     const uint64_t min_log = versions_->LogNumber();
     const uint64_t prev_log = versions_->PrevLogNumber();
     std::vector<std::string> filenames;
@@ -129,11 +129,11 @@ Status DBImpl::Recover(VersionEdit* edit) {
 
 ```c++
 Status VersionSet::Recover() {
-	/* versionEdit在version上操作的一个工具类
-	 * 主要工作有两个：
-	 * 1. Apply(VersionEdit* edit)：将edit操作在this, current_上，添加、删除文件。
-	 * 2. SaveTo(Version* v)：将current_的当前状态dump到*v中
-	 */
+  /* versionEdit在version上操作的一个工具类
+   * 主要工作有两个：
+   * 1. Apply(VersionEdit* edit)：将edit操作在this, current_上，添加、删除文件。
+   * 2. SaveTo(Version* v)：将current_的当前状态dump到*v中
+   */
   Builder builder(this, current_);
   {
     LogReporter reporter;
@@ -154,12 +154,12 @@ Status VersionSet::Recover() {
         }
       }
 
-			// 将edit应用在current_（Builder初始化参数）上
+      // 将edit应用在current_（Builder初始化参数）上
       if (s.ok()) {
         builder.Apply(&edit);
       }
 
-			// 记录中间状态，最后更新dn
+      // 记录中间状态，最后更新dn
       if (edit.has_log_number_) {
         log_number = edit.log_number_;
         have_log_number = true;
@@ -185,7 +185,7 @@ Status VersionSet::Recover() {
   file = NULL;
 
   if (s.ok()) {
-  	// 下面的变量是必须有的字段，否则元信息有损坏
+    // 下面的变量是必须有的字段，否则元信息有损坏
     if (!have_next_file) {
       s = Status::Corruption("no meta-nextfile entry in descriptor");
     } else if (!have_log_number) {
@@ -194,12 +194,12 @@ Status VersionSet::Recover() {
       s = Status::Corruption("no last-sequence-number entry in descriptor");
     }
 
-		// 兼容旧版本
+    // 兼容旧版本
     if (!have_prev_log_number) {
       prev_log_number = 0;
     }
 		
-		// 递增一个文件号
+    // 递增一个文件号
     MarkFileNumberUsed(prev_log_number);
     MarkFileNumberUsed(log_number);
   }
@@ -314,7 +314,7 @@ Status DB::Open(const Options& options, const std::string& dbname,
   Status s = impl->Recover(&edit); // Handles create_if_missing, error_if_exists
   if (s.ok()) {
   	
-  	// 生成新的binlog文件，在这里可以看到，binlog 和 sst文件公用一个序列的文件号
+    // 生成新的binlog文件，在这里可以看到，binlog 和 sst文件公用一个序列的文件号
     uint64_t new_log_number = impl->versions_->NewFileNumber();
     WritableFile* lfile;
     s = options.env->NewWritableFile(LogFileName(dbname, new_log_number),
@@ -328,11 +328,9 @@ Status DB::Open(const Options& options, const std::string& dbname,
       s = impl->versions_->LogAndApply(&edit, &impl->mutex_);
     }
     if (s.ok()) {
-    	/* 在DB目录下扫描所有文件，对于没有的文件删除
-    	 */
+      /* 在DB目录下扫描所有文件，对于没有的文件删除 */
       impl->DeleteObsoleteFiles();
-      /* 调度compact线程，根据标准决定是否执行压缩，后续介绍
-       */
+      /* 调度compact线程，根据标准决定是否执行压缩，后续介绍 */
       impl->MaybeScheduleCompaction();
     }
   }
