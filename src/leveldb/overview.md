@@ -26,7 +26,7 @@ dbname/[0-9]+.log              // 记录binlog，写操作会先写入内存，�
 
 # 主要流程架构图
 
-<img src="../../images/leveldb_arc.png" alt="leveldb_arc.png" style="zoom:80%;" />
+<img src="../../images/leveldb_arc.png" alt="leveldb_arc.png" style="zoom:50%;" />
 
 #### 写流程
 
