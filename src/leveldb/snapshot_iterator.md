@@ -27,7 +27,7 @@ DBIter：继承自Iterator（纯虚类），对外接口的第一层入口。
 
 Iterator* internal_iter：DBIter的成员变量，组合关系，具体对象为MergingIterator类型。
 
-MergingIterator：继承自Iterator，内部成员变量IteratorWrapper* children_，是一个迭代器数组，包含：MemTableIterator（继承自Iterator，内存跳跃表迭代器）、TwoLevelIterator（继承自Iterator，两层sst文件迭代器，内部包含LevelFileNumIterator，继承自Iterator，一层文件的迭代器）。
+MergingIterator：继承自Iterator，内部成员变量IteratorWrapper* children_，是一个迭代器数组，包含：MemTableIterator（继承自Iterator，内存跳跃表迭代器）、TwoLevelIterator（继承自Iterator，两层迭代器的含义是cache 和 sst文件，内部包含LevelFileNumIterator，继承自Iterator，一层文件的迭代器）。
 
 
 
