@@ -57,7 +57,6 @@ level > 0，从level中选出一个文件，通过其key范围在level + 1层选
 1. [data struct](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/data_type.md)
 2. [open db](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/open.md)
 3. [compact operation](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/compact.md)
-4. write operation
-5. read operation
-6. snapshot implemet
-7. iterator
+4. [write and read operation](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/write_read.md)
+5. snapshot
+6. iterator
