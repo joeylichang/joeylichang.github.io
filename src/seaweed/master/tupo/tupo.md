@@ -42,14 +42,14 @@ func (n *NodeImpl) UpAdjustVolumeCountDelta(volumeCountDelta int64) { //can be n
 
 [Topology](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/topology.md)
 
-DataCenter
+[DataCenter](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/data_center.md)
 
-Rack
+[Rack](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/rack.md)
 
-DataNode
+[DataNode](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/data_node.md)
 
-Collection
+[Collection]:(https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/collection.md)
 
-VolumeGrowOption
+[VolumeGrowOption](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/volume_grow_option.md)
 
-VolumeLayout
+[VolumeLayout](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/volume_layout.md)
