@@ -43,9 +43,15 @@ func (n *NodeImpl) UpAdjustVolumeCountDelta(volumeCountDelta int64) { //can be n
 ### 拓扑数据详解
 
 [Topology](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/topology.md)
+
 DataCenter
+
 Rack
+
 DataNode
+
 Collection
+
 VolumeGrowOption
+
 VolumeLayout
