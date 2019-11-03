@@ -22,14 +22,14 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 	var dn *topology.DataNode
 	t := ms.Topo
 
-  // 链接断开的逻辑
+  	// 链接断开的逻辑
 	defer func() {
 		if dn != nil {
 
-      glog.V(0).Infof("unregister disconnected volume server %s:%d", dn.Ip, dn.Port)
-      /* 设置VolumeLayout 为 Unavailable（VolumeLayout中可能有多个dn，只取出一个dn）
-       * 更新tupu中各节点信息并且从拓扑中摘除
-       */
+      			glog.V(0).Infof("unregister disconnected volume server %s:%d", dn.Ip, dn.Port)
+		
+      			/* 设置VolumeLayout 为 Unavailable（VolumeLayout中可能有多个dn，只取出一个dn）
+       			 * 更新tupu中各节点信息并且从拓扑中摘除 */
 			t.UnRegisterDataNode(dn)
 
 			message := &master_pb.VolumeLocation{
@@ -40,7 +40,7 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 				message.DeletedVids = append(message.DeletedVids, uint32(v.Id))
 			}
 
-      /* 一个类似client monitor 的功能，像信息发送给client */
+      			/* 一个类似client monitor 的功能，像信息发送给client */
 			if len(message.DeletedVids) > 0 {
 				ms.clientChansLock.RLock()
 				for _, ch := range ms.clientChans {
@@ -53,16 +53,16 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 	}()
 
 	for {
-    // 链接正常，持续从长连接中读出数据
+    		// 链接正常，持续从长连接中读出数据
 		heartbeat, err := stream.Recv()
 		// 更新全局最大的key
 		t.Sequence.SetMax(heartbeat.MaxFileKey)
 
-    // 表示链接第一次建立
+    		// 表示链接第一次建立
 		if dn == nil {
 			// 从配置中读取，配置可以是空
 			dcName, rackName := t.Configuration.Locate(heartbeat.Ip, heartbeat.DataCenter, heartbeat.Rack)
-      // 从拓扑中获取dn，如果没有就会常见，其中会更新dn的LastSeen
+      			// 从拓扑中获取dn，如果没有就会常见，其中会更新dn的LastSeen
 			dc := t.GetOrCreateDataCenter(dcName)
 			rack := dc.GetOrCreateRack(rackName)
 			dn = rack.GetOrCreateDataNode(heartbeat.Ip,
@@ -82,7 +82,7 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 			Url:       dn.Url(),
 			PublicUrl: dn.PublicUrl,
 		}
-    // 新增和删除vid更新topu
+    		// 新增和删除vid更新topu
 		if len(heartbeat.NewVolumes) > 0 || len(heartbeat.DeletedVolumes) > 0 {
 			// process delta volume ids if exists for fast volume id updates
 			for _, volInfo := range heartbeat.NewVolumes {
@@ -95,7 +95,7 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 			t.IncrementalSyncDataNodeRegistration(heartbeat.NewVolumes, heartbeat.DeletedVolumes, dn)
 		}
 
-    // 更新volume_server 原本的volume信息
+    		// 更新volume_server 原本的volume信息
 		if len(heartbeat.Volumes) > 0 || heartbeat.HasNoVolumes {
 			// 根据heartbeat.Volumes 获取到volume的变化
 			newVolumes, deletedVolumes := t.SyncDataNodeRegistration(heartbeat.Volumes, dn)
@@ -110,7 +110,7 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 			}
 		}
 
-    // 通知订阅的客户端
+   		// 通知订阅的客户端
 		if len(message.NewVids) > 0 || len(message.DeletedVids) > 0 {
 			ms.clientChansLock.RLock()
 			for host, ch := range ms.clientChans {
