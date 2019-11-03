@@ -10,26 +10,26 @@ Seaweed的拓扑信息从逻辑上划分为三种节点，既DataCenter、Rack�
 
 ```go
 type NodeImpl struct {
-	volumeCount       int64						// 已经alloc的volume数量
-	activeVolumeCount int64						// 可以使用的volume数量
-	ecShardCount      int64						// ec编码的volume数量
-	maxVolumeCount    int64						// 当前节点下的最大可申请的volume数量
-	id                NodeId					// nodeID string类型
-	parent            Node						// 父节点
+	volumeCount       int64			// 已经alloc的volume数量
+	activeVolumeCount int64			// 可以使用的volume数量
+	ecShardCount      int64			// ec编码的volume数量
+	maxVolumeCount    int64			// 当前节点下的最大可申请的volume数量
+	id                NodeId		// nodeID string类型
+	parent            Node			// 父节点
 	sync.RWMutex      // lock children	
-	children          map[NodeId]Node	// 子节点，TopoLogy、DataCenter、Rack、DataNode顺序
-	maxVolumeId       needle.VolumeId // 当前节点最大的volumID
+	children          map[NodeId]Node 	// 子节点，TopoLogy、DataCenter、Rack、DataNode顺序
+	maxVolumeId       needle.VolumeId 	// 当前节点最大的volumID
 
 	//for data node, rack, data center, topology
 	nodeType string
-	value    interface{}							// 只想当前节点的类型（TopoLogy、DataCenter、Rack、DataNode）
+	value    interface{}			// 只想当前节点的类型（TopoLogy、DataCenter、Rack、DataNode）
 }
 ```
 
 拓扑信息中的节点统一继承自一个结构体的好处是可以递归计算每个节点的信息（树结构 + 相同的计算逻辑），例如：
 
 ```go
-// 例如DataNode的增加或者减少，可以递归计算父节点的实时volume的数量
+// 例如, DataNode的增加或者减少，可以递归计算父节点的实时volume的数量
 func (n *NodeImpl) UpAdjustVolumeCountDelta(volumeCountDelta int64) { //can be negative
 	atomic.AddInt64(&n.volumeCount, volumeCountDelta)
 	if n.parent != nil {
@@ -42,16 +42,10 @@ func (n *NodeImpl) UpAdjustVolumeCountDelta(volumeCountDelta int64) { //can be n
 
 ### 拓扑数据详解
 
-Topology
-
+[Topology](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/topology.md)
 DataCenter
-
 Rack
-
 DataNode
-
 Collection
-
 VolumeGrowOption
-
 VolumeLayout
