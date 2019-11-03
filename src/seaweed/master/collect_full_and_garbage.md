@@ -10,12 +10,12 @@ func (t *Topology) StartRefreshWritableVolumes(grpcDialOption grpc.DialOption, g
 				freshThreshHold := time.Now().Unix() - 3*t.pulse //3 times of sleep interval
 				t.CollectDeadNodeAndFullVolumes(freshThreshHold, t.volumeSizeLimit)
 			}
-      // pulse默认5ms，周期时间默认是5-10ms之间
+      			// pulse默认5ms，周期时间默认是5-10ms之间
 			time.Sleep(time.Duration(float32(t.pulse*1e3)*(1+rand.Float32())) * time.Millisecond)
 		}
 	}()
   
-  // 当volume删除数据超过闸值之后，进行压缩这部分后面介绍
+  	// 当volume删除数据超过闸值之后，进行压缩这部分后面介绍
 	go func(garbageThreshold float64) {
 		c := time.Tick(15 * time.Minute)
 		for _ = range c {
@@ -25,16 +25,16 @@ func (t *Topology) StartRefreshWritableVolumes(grpcDialOption grpc.DialOption, g
 		}
 	}(garbageThreshold)
   
-  // 上面CollectDeadNodeAndFullVolumes扫描全量的volume，返现满的会通过chan到这里
+  	// 上面CollectDeadNodeAndFullVolumes扫描全量的volume，返现满的会通过chan到这里
 	go func() {
 		for {
 			select {
 			case v := <-t.chanFullVolumes:
-        /* CollectDeadNodeAndFullVolumes扫描的是dn，返回的是VolumeInfo
-         * SetVolumeCapacityFull 通过vid在volumeLayout中将vid所有的dn放入不可写的map中
-         * 所以多个副本的vid扫描初一个就会被设置为不可写
-         * 除了volumeLayout之外，还会更新父节点的VolumeCount信息
-         */
+        			/* CollectDeadNodeAndFullVolumes扫描的是dn，返回的是VolumeInfo
+        			 * SetVolumeCapacityFull 通过vid在volumeLayout中将vid所有的dn放入不可写的map中
+        			 * 所以多个副本的vid扫描初一个就会被设置为不可写
+        			 * 除了volumeLayout之外，还会更新父节点的VolumeCount信息
+        			 */
 				t.SetVolumeCapacityFull(v)
 			}
 		}
