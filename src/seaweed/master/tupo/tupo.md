@@ -1,7 +1,7 @@
 # 拓扑数据
 
 ### 类关系图
-![seaweed_tupo](../../../../images/seaweed_tupo.png)
+<img src="../../../../images/seaweed_tupo.png" alt="seaweed_tupo" style="zoom:50%;" />
 Seaweed的拓扑信息从逻辑上划分为三种节点，既DataCenter、Rack、DataNode分别于物理设备对应，所有的拓扑信息又都收敛于一个TopoLogy如上图所示，其中TopoLogy、DataCenter、Rack、DataNode又全部继承与NodeImpl结构体，NodeImpl实现了Node接口。NodeImpl 结构体内部变量nodeType用于区分四种节点类型（既TopoLogy、DataCenter、Rack、DataNode）。
 
 ###### NodeImpl
