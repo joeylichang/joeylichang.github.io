@@ -3,8 +3,7 @@
 seaweed中master是被动收集心跳，主要有以下几点：
 
 1. volume_server 根据配置（默认5s）汇报一次心跳，master根据收到的心跳更新dn的信息。
-2. 调用assign接口时，master向volume_server发送创建volume的请求（在master的grow_option中有介绍）并没有更新master内部的元数据，这部分delta是通过心跳上报的。
-3. 根据master的Heartbeat源码，volume_server与master之间是长连接，一旦链接断开相应的元信息（rack、dc的volume个数等）进行相应的扣减。
+2. 根据master的Heartbeat源码，volume_server与master之间是长连接，一旦链接断开相应的元信息（rack、dc的volume个数等）进行相应的扣减。
 
 问题：
 
