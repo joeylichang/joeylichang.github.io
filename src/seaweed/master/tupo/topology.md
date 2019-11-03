@@ -13,7 +13,7 @@ type Topology struct {
 
 	pulse int64					// volume_server 心跳上报的周期
 	volumeSizeLimit uint64				// volume的大小限制，默认30
-	Sequence sequence.Sequencer 	                // volumeID，从1开始递增
+	Sequence sequence.Sequencer 	                // Max fileID，从1开始递增
 	chanFullVolumes chan storage.VolumeInfo		// 管道用于check volume是否写满，表示为不可写
 	Configuration *Configuration	                // 拓扑信息的配置
 
