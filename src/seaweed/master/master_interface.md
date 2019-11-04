@@ -10,7 +10,7 @@
 | mdir                    | os.TempDir() | data directory to store meta data      |
 | peers                   | ""           | example: 127.0.0.1:9093,127.0.0.1:9094 |
 | volumeSizeLimitMB       | 30*1000      |                                        |
-| volumePreallocate       | false        | Preallocate disk space for volumes     |
+| volumePreallocate       | false        | Preallocate disk space（fallocte函数，保证文件连续，减少寻道时间）|
 | pulseSeconds            | 5            | number of seconds between heartbeats   |
 | defaultReplication      | 000          |                                        |
 | garbageThreshold        | 0.3          |                                        |
