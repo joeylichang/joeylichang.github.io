@@ -6,7 +6,7 @@
 | ----------------------- | ------------ | -------------------------------------- |
 | port                    | 9333         | http listen port                       |
 | ip                      | localhost    | master <ip>、<server> address          |
-| ip.bind                 | 0.0.0.0      | ip address to bind to                  |
+| ip.bind                 | 0.0.0.0      | ip address to bind to(http)            |
 | mdir                    | os.TempDir() | data directory to store meta data      |
 | peers                   | ""           | example: 127.0.0.1:9093,127.0.0.1:9094 |
 | volumeSizeLimitMB       | 30*1000      |                                        |
