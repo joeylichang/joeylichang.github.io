@@ -11,7 +11,7 @@ type NodeImpl struct {
 	volumeCount       int64			// 已经alloc的volume数量
 	activeVolumeCount int64			// 可以使用的volume数量
 	ecShardCount      int64			// ec编码的volume数量
-	maxVolumeCount    int64			// 当前节点下的最大可申请的volume数量
+	maxVolumeCount    int64			// 当前节点下的最大可申请的volume数量（volume上架时，不同目录配置的总和）
 	id                NodeId		// nodeID string类型
 	parent            Node			// 父节点
 	sync.RWMutex      // lock children	
