@@ -2,8 +2,6 @@
 
 <img src="../../../../images/seaweed_volume_data.png" alt="seaweed_volume_data" style="zoom:50%;" />
 
-
-
 [Store](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/store.md)：一个进程对应一个store，或者一个存储节点对应一个store。
 
 [DiskLocation](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/disk_location.md)：一个磁盘对应一个diskloction，或者一个存储目录（volume_server启动时可以指定多个目录）对应一个diskloction。
