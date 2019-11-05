@@ -17,16 +17,16 @@ type AssignRequest struct {
 }
 
 type AssignResponse struct {
-	Fid       string 							// 申请多个fid也只会返回一个
-	Url       string 							// dn的url，只有一个，主dn保证强一致性
+	Fid       string 			// 申请多个fid也只会返回一个
+	Url       string 			// dn的url，只有一个，主dn保证强一致性
 	PublicUrl string 
-	Count     uint64 							// 申请成功的个数
+	Count     uint64 			// 申请成功的个数
 	Error     string 
-	Auth      string 							// 设置了安全配置，则需要这个选项（不做重点介绍）
+	Auth      string 			// 设置了安全配置，则需要这个选项（不做重点介绍）
 }
 ```
 
-注意：
+注意：申请多个fid时，只返回一个，fid由三部分组成，vid + 内存递增id + cookie，多个fid回退即可获得
 
 ## 流程
 
@@ -65,9 +65,9 @@ func (ms *MasterServer) Assign(ctx context.Context, req *master_pb.AssignRequest
 		}
 		ms.vgLock.Lock()
     
-    // 加锁需要重新check
+  		// 加锁需要重新check
 		if !ms.Topo.HasWritableVolume(option) {
-      // 没有符合要求的volume，此时需要根据要求创建新的volume
+      			// 没有符合要求的volume，此时需要根据要求创建新的volume
 			if _, err = ms.vg.AutomaticGrowByType(option, ms.grpcDialOption, ms.Topo); err != nil {
 				ms.vgLock.Unlock()
 				return nil, fmt.Errorf("Cannot grow volume group! %v", err)
@@ -76,7 +76,7 @@ func (ms *MasterServer) Assign(ctx context.Context, req *master_pb.AssignRequest
 		ms.vgLock.Unlock()
 	}
   
-  // 注意count是申请成功的数量，但是fid只返回了一个，原因见上面参数部分
+  	// 注意count是申请成功的数量，但是fid只返回了一个，原因见上面参数部分
 	fid, count, dn, err := ms.Topo.PickForWrite(req.Count, option)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
@@ -107,20 +107,20 @@ func (vg *VolumeGrowth) findEmptySlotsForOneVolume(topo *Topology, option *Volum
 	 */
 	rp := option.ReplicaPlacement
 	mainDataCenter, otherDataCenters, dc_err := topo.RandomlyPickNodes(rp.DiffDataCenterCount+1, func(node Node) error {
-    // 1. 必须是dc，如果指定dc，则必须为指定的值
+    		// 1. 必须是dc，如果指定dc，则必须为指定的值
 		if option.DataCenter != "" && node.IsDataCenter() && node.Id() != NodeId(option.DataCenter) {
 			return fmt.Errorf("Not matching preferred data center:%s", option.DataCenter)
 		}
-    // 2. dc的子节点既rack必须符合rp的策略要求
+    		// 2. dc的子节点既rack必须符合rp的策略要求
 		if len(node.Children()) < rp.DiffRackCount+1 {
 			return fmt.Errorf("Only has %d racks, not enough for %d.", len(node.Children()), rp.DiffRackCount+1)
 		}
-    // 3. dc容量必须满足rp策略
+    		// 3. dc容量必须满足rp策略
 		if node.FreeSpace() < int64(rp.DiffRackCount+rp.SameRackCount+1) {
 			return fmt.Errorf("Free:%d < Expected:%d", node.FreeSpace(), rp.DiffRackCount+rp.SameRackCount+1)
 		}
     
-    // 4. 计算当前dc下，rack和dn有容量的节点是否满足rp
+    		// 4. 计算当前dc下，rack和dn有容量的节点是否满足rp
 		possibleRacksCount := 0
 		for _, rack := range node.Children() {
 			possibleDataNodesCount := 0
@@ -158,15 +158,15 @@ func (vg *VolumeGrowth) findEmptySlotsForOneVolume(topo *Topology, option *Volum
 		return nil, serverErr
 	}
 
-  // 将同rack下选出来的dn加到结果中
+  	// 将同rack下选出来的dn加到结果中
 	servers = append(servers, mainServer.(*DataNode))
 	for _, server := range otherServers {
 		servers = append(servers, server.(*DataNode))
 	}
   
-  /* 在otherRacks中随机选择一个server，这里面随机用的rand.Int63n(rack.FreeSpace())
-   * 随机性用了FreeSpace，经过一定长时间的悬着之后每个节点的容量将是均衡的
-   */
+  	/* 在otherRacks中随机选择一个server，这里面随机用的rand.Int63n(rack.FreeSpace())
+  	 * 随机性用了FreeSpace，经过一定长时间的悬着之后每个节点的容量将是均衡的
+   	 */
 	for _, rack := range otherRacks {
 		r := rand.Int63n(rack.FreeSpace())
 		if server, e := rack.ReserveOneVolume(r); e == nil {
@@ -175,7 +175,8 @@ func (vg *VolumeGrowth) findEmptySlotsForOneVolume(topo *Topology, option *Volum
 			return servers, e
 		}
 	}
-  /* ReserveOneVolume 进行递归计算dn容量，逻辑同上 */
+	
+  	/* ReserveOneVolume 进行递归计算dn容量，逻辑同上 */
 	for _, datacenter := range otherDataCenters {
 		r := rand.Int63n(datacenter.FreeSpace())
 		if server, e := datacenter.ReserveOneVolume(r); e == nil {
@@ -193,7 +194,7 @@ func (vg *VolumeGrowth) findEmptySlotsForOneVolume(topo *Topology, option *Volum
 ```go
 func (vg *VolumeGrowth) grow(grpcDialOption grpc.DialOption, topo *Topology, vid needle.VolumeId, option *VolumeGrowOption, servers ...*DataNode) error {
 	for _, server := range servers {
-    // 调用grpc 与 volume_server交互
+    		// 调用grpc 与 volume_server交互
 		if err := AllocateVolume(server, grpcDialOption, vid, option); err == nil {
 			vi := storage.VolumeInfo{
 				Id:               vid,
@@ -203,7 +204,7 @@ func (vg *VolumeGrowth) grow(grpcDialOption grpc.DialOption, topo *Topology, vid
 				Ttl:              option.Ttl,
 				Version:          needle.CurrentVersion,
 			}
-      // 更新master本地拓扑信息
+      			// 更新master本地拓扑信息
 			server.AddOrUpdateVolume(vi)
 			topo.RegisterVolumeLayout(vi, server)
 			glog.V(0).Infoln("Created Volume", vid, "on", server.NodeImpl.String())
@@ -216,7 +217,7 @@ func (vg *VolumeGrowth) grow(grpcDialOption grpc.DialOption, topo *Topology, vid
 }
 ```
 
-###### 问题
+##### 问题
 
 grow循环向所有的dn发送AllocateVolume请求，一旦有一个失败ReplicaPlacement将是不完整的，在seaweed系统本身的模块并没有这种一致性的校验，seaweed提供的解决方案是weed_shell（有一个fix.replica命令），建议周期性的执行，这种方案算是一种track方案，并不是一个完美方案。
 
@@ -232,12 +233,12 @@ func (s *Store) addVolume(vid needle.VolumeId, collection string, needleMapKind 
 		return fmt.Errorf("Volume Id %d already exists!", vid)
 	}
   
-  // 选择容量最少的磁盘
+  	// 选择容量最少的磁盘
 	if location := s.FindFreeLocation(); location != nil {
 		glog.V(0).Infof("In dir %s adds volume:%v collection:%s replicaPlacement:%v ttl:%v",
 			location.Directory, vid, collection, replicaPlacement, ttl)
 		if volume, err := NewVolume(location.Directory, collection, vid, needleMapKind, replicaPlacement, ttl, preallocate, MemoryMapMaxSizeMb); err == nil {
-      // volume加到磁盘
+      			// volume加到磁盘
 			location.SetVolume(vid, volume)
 			glog.V(0).Infof("add volume %d", vid)
 			s.NewVolumesChan <- master_pb.VolumeShortInformationMessage{
