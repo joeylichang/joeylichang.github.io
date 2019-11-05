@@ -43,25 +43,25 @@
 
 #### grpc请求
 
-| method_name           | descriptiom |
-| --------------------- | ----------- |
-| BatchDelete           |             |
-| VacuumVolumeCheck     |             |
-| VacuumVolumeCompact   |             |
-| VacuumVolumeCommit    |             |
-| VacuumVolumeCleanup   |             |
-| DeleteCollection      |             |
-| AllocateVolume        |             |
-| VolumeSyncStatus      |             |
-| VolumeIncrementalCopy |             |
-| VolumeMount           |             |
-| VolumeUnmount         |             |
-| VolumeDelete          |             |
-| VolumeMarkReadonly    |             |
-| VolumeCopy            |             |
-| ReadVolumeFileStatus  |             |
-| CopyFile              |             |
-| VolumeTailSender      |             |
-| VolumeTailReceiver    |             |
-| Query                 |             |
+| method_name           | descriptiom                          |
+| --------------------- | ------------------------------------ |
+| BatchDelete           | 批量删除volume（weed shell使用）     |
+| VacuumVolumeCheck     | 压缩检查                             |
+| VacuumVolumeCompact   | 压缩执行                             |
+| VacuumVolumeCommit    | 压缩提交                             |
+| VacuumVolumeCleanup   | 压缩失败清理中间数据                 |
+| DeleteCollection      | 删除collection（weed shell使用）     |
+| AllocateVolume        | 申请volume（master 调用）            |
+| VolumeSyncStatus      | 同步volume状态信息                   |
+| VolumeIncrementalCopy | weed shell使用，见weed shell部分介绍 |
+| VolumeMount           | weed shell使用，见weed shell部分介绍 |
+| VolumeUnmount         | weed shell使用，见weed shell部分介绍 |
+| VolumeDelete          | 删除volume                           |
+| VolumeMarkReadonly    | 标志volume只读                       |
+| VolumeCopy            | weed shell使用，见weed shell部分介绍 |
+| ReadVolumeFileStatus  | 获取volume 数据文件和索引文件信息    |
+| CopyFile              | 复制文件（weed shell使用，后续介绍） |
+| VolumeTailSender      | weed shell使用，见weed shell部分介绍 |
+| VolumeTailReceiver    | weed shell使用，见weed shell部分介绍 |
+| Query                 | 查询碧辟fid信息                      |
 

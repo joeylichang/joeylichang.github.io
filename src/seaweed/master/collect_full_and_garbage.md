@@ -32,7 +32,7 @@ func (t *Topology) StartRefreshWritableVolumes(grpcDialOption grpc.DialOption, g
 			case v := <-t.chanFullVolumes:
         			/* CollectDeadNodeAndFullVolumes扫描的是dn，返回的是VolumeInfo
         			 * SetVolumeCapacityFull 通过vid在volumeLayout中将vid所有的dn放入不可写的map中
-        			 * 所以多个副本的vid扫描初一个就会被设置为不可写
+        			 * 所以多个副本的vid扫描出一个就会被设置为不可写
         			 * 除了volumeLayout之外，还会更新父节点的VolumeCount信息
         			 */
 				t.SetVolumeCapacityFull(v)
