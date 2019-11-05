@@ -10,11 +10,47 @@ seaweed中master是被动收集心跳，主要有以下几点：
 1. 在源码中并没有周期性的check dn的过期时间（dn中LastSeen字段），如果链接故障（因为是长连接可能心跳丢失或者其他原因master并未收到，或者dn故障了master并未收到链接断开的网络分节）会导致master做一些误判（volume_server pick不准确等 ==> 这可能是volume在创建时会有一个放大的原因，master的grow_option中有介绍）。
 2. 从源码中看函数StartRefreshWritableVolumes，像是包含周期ckeck dn的逻辑，但是里面之后check full 和 garbage的逻辑。
 
+## 消息
+
+```go
+type Heartbeat struct {
+	Ip             string                      
+	Port           uint32                      
+	PublicUrl      string                      
+	MaxVolumeCount uint32                      
+	MaxFileKey     uint64                      
+	DataCenter     string                      
+	Rack           string                      
+	AdminPort      uint32                      
+	Volumes        []*VolumeInformationMessage 
+  
+	// delta volumes
+	NewVolumes     []*VolumeShortInformationMessage 
+	DeletedVolumes []*VolumeShortInformationMessage 
+	HasNoVolumes   bool   
+}
+
+type VolumeShortInformationMessage struct {
+	Id               uint32 
+	Collection       string 
+	ReplicaPlacement uint32 
+	Version          uint32 
+	Ttl              uint32 
+}
+
+type HeartbeatResponse struct {
+	VolumeSizeLimit        uint64 
+	Leader                 string 
+	MetricsAddress         string 
+	MetricsIntervalSeconds uint32 
+}
+```
+
 
 
 ## 源码
 
-下面源码有部分次要逻辑省略（包括ec部分逻辑）。
+###### master侧源码
 
 ```go
 func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServer) error {
@@ -137,41 +173,141 @@ func (ms *MasterServer) SendHeartbeat(stream master_pb.Seaweed_SendHeartbeatServ
 }
 ```
 
+###### volume_server 侧源码
 
-
-## 消息
+volume_server初始化完毕后，有一个协程周期（默认5s）上报心跳。
 
 ```go
-type Heartbeat struct {
-	Ip             string                      
-	Port           uint32                      
-	PublicUrl      string                      
-	MaxVolumeCount uint32                      
-	MaxFileKey     uint64                      
-	DataCenter     string                      
-	Rack           string                      
-	AdminPort      uint32                      
-	Volumes        []*VolumeInformationMessage 
-  
-	// delta volumes
-	NewVolumes     []*VolumeShortInformationMessage 
-	DeletedVolumes []*VolumeShortInformationMessage 
-	HasNoVolumes   bool   
-}
+func (vs *VolumeServer) heartbeat() {
 
-type VolumeShortInformationMessage struct {
-	Id               uint32 
-	Collection       string 
-	ReplicaPlacement uint32 
-	Version          uint32 
-	Ttl              uint32 
-}
+	glog.V(0).Infof("Volume server start with seed master nodes: %v", vs.SeedMasterNodes)
+	vs.store.SetDataCenter(vs.dataCenter)
+	vs.store.SetRack(vs.rack)
 
-type HeartbeatResponse struct {
-	VolumeSizeLimit        uint64 
-	Leader                 string 
-	MetricsAddress         string 
-	MetricsIntervalSeconds uint32 
+	grpcDialOption := security.LoadClientTLS(viper.Sub("grpc"), "volume")
+
+	var err error
+	var newLeader string
+	for {
+		for _, master := range vs.SeedMasterNodes {
+			if newLeader != "" {
+				master = newLeader
+			}
+			masterGrpcAddress, parseErr := util.ParseServerToGrpcAddress(master)
+			if parseErr != nil {
+				glog.V(0).Infof("failed to parse master grpc %v: %v", masterGrpcAddress, parseErr)
+				continue
+			}
+			vs.store.MasterAddress = master
+      // 收集详细信息
+			newLeader, err = vs.doHeartbeat(context.Background(), master, masterGrpcAddress, grpcDialOption, time.Duration(vs.pulseSeconds)*time.Second)
+			if err != nil {
+				glog.V(0).Infof("heartbeat error: %v", err)
+        // 周期执行
+				time.Sleep(time.Duration(vs.pulseSeconds) * time.Second)
+				newLeader = ""
+				vs.store.MasterAddress = ""
+			}
+		}
+	}
 }
 ```
+
+```go
+func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcAddress string, grpcDialOption grpc.DialOption, sleepInterval time.Duration) (newLeader string, err error) {
+
+	grpcConection, err := util.GrpcDial(ctx, masterGrpcAddress, grpcDialOption)
+	if err != nil {
+		return "", fmt.Errorf("fail to dial %s : %v", masterNode, err)
+	}
+	defer grpcConection.Close()
+
+	client := master_pb.NewSeaweedClient(grpcConection)
+  
+  // 建立长连接
+	stream, err := client.SendHeartbeat(ctx)
+	if err != nil {
+		glog.V(0).Infof("SendHeartbeat to %s: %v", masterNode, err)
+		return "", err
+	}
+	glog.V(0).Infof("Heartbeat to: %v", masterNode)
+	vs.currentMaster = masterNode
+
+	doneChan := make(chan error, 1)
+
+  // 接收心跳的返回包
+	go func() {
+		for {
+			in, err := stream.Recv()
+			if err != nil {
+				doneChan <- err
+				return
+			}
+			if in.GetVolumeSizeLimit() != 0 {
+				vs.store.SetVolumeSizeLimit(in.GetVolumeSizeLimit())
+			}
+			if in.GetLeader() != "" && masterNode != in.GetLeader() && !isSameIP(in.GetLeader(), masterNode) {
+				glog.V(0).Infof("Volume Server found a new master newLeader: %v instead of %v", in.GetLeader(), masterNode)
+				newLeader = in.GetLeader()
+        
+        // 主master变更，需要重连，退出
+				doneChan <- nil
+				return
+			}
+			if in.GetMetricsAddress() != "" && vs.MetricsAddress != in.GetMetricsAddress() {
+				vs.MetricsAddress = in.GetMetricsAddress()
+				vs.MetricsIntervalSec = int(in.GetMetricsIntervalSeconds())
+			}
+		}
+	}()
+
+  // 第一次发送数据
+	if err = stream.Send(vs.store.CollectHeartbeat()); err != nil {
+		glog.V(0).Infof("Volume Server Failed to talk with master %s: %v", masterNode, err)
+		return "", err
+	}
+
+	volumeTickChan := time.Tick(sleepInterval)
+
+	for {
+		select {
+    // 新建volume通过tology的管道通知发送
+		case volumeMessage := <-vs.store.NewVolumesChan:
+			deltaBeat := &master_pb.Heartbeat{
+				NewVolumes: []*master_pb.VolumeShortInformationMessage{
+					&volumeMessage,
+				},
+			}
+			glog.V(1).Infof("volume server %s:%d adds volume %d", vs.store.Ip, vs.store.Port, volumeMessage.Id)
+			if err = stream.Send(deltaBeat); err != nil {
+				glog.V(0).Infof("Volume Server Failed to update to master %s: %v", masterNode, err)
+				return "", err
+			}
+    // 删除volume通过tology的管道通知发送
+		case volumeMessage := <-vs.store.DeletedVolumesChan:
+			deltaBeat := &master_pb.Heartbeat{
+				DeletedVolumes: []*master_pb.VolumeShortInformationMessage{
+					&volumeMessage,
+				},
+			}
+			glog.V(1).Infof("volume server %s:%d deletes volume %d", vs.store.Ip, vs.store.Port, volumeMessage.Id)
+			if err = stream.Send(deltaBeat); err != nil {
+				glog.V(0).Infof("Volume Server Failed to update to master %s: %v", masterNode, err)
+				return "", err
+			}
+    // 周期发送
+		case <-volumeTickChan:
+			glog.V(4).Infof("volume server %s:%d heartbeat", vs.store.Ip, vs.store.Port)
+			if err = stream.Send(vs.store.CollectHeartbeat()); err != nil {
+				glog.V(0).Infof("Volume Server Failed to talk with master %s: %v", masterNode, err)
+				return "", err
+			}
+		case err = <-doneChan:
+			return
+		}
+	}
+}
+```
+
+
 
