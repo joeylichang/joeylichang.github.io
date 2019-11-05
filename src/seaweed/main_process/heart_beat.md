@@ -199,11 +199,13 @@ func (vs *VolumeServer) heartbeat() {
 				continue
 			}
 			vs.store.MasterAddress = master
-      // 收集详细信息
+			
+      			// 收集详细信息
 			newLeader, err = vs.doHeartbeat(context.Background(), master, masterGrpcAddress, grpcDialOption, time.Duration(vs.pulseSeconds)*time.Second)
 			if err != nil {
 				glog.V(0).Infof("heartbeat error: %v", err)
-        // 周期执行
+				
+        			// 周期执行
 				time.Sleep(time.Duration(vs.pulseSeconds) * time.Second)
 				newLeader = ""
 				vs.store.MasterAddress = ""
@@ -224,7 +226,7 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 
 	client := master_pb.NewSeaweedClient(grpcConection)
   
-  // 建立长连接
+  	// 建立长连接
 	stream, err := client.SendHeartbeat(ctx)
 	if err != nil {
 		glog.V(0).Infof("SendHeartbeat to %s: %v", masterNode, err)
@@ -235,7 +237,7 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 
 	doneChan := make(chan error, 1)
 
-  // 接收心跳的返回包
+  	// 接收心跳的返回包
 	go func() {
 		for {
 			in, err := stream.Recv()
@@ -250,7 +252,7 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 				glog.V(0).Infof("Volume Server found a new master newLeader: %v instead of %v", in.GetLeader(), masterNode)
 				newLeader = in.GetLeader()
         
-        // 主master变更，需要重连，退出
+        			// 主master变更，需要重连，退出
 				doneChan <- nil
 				return
 			}
@@ -261,7 +263,7 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 		}
 	}()
 
-  // 第一次发送数据
+  	// 第一次发送数据
 	if err = stream.Send(vs.store.CollectHeartbeat()); err != nil {
 		glog.V(0).Infof("Volume Server Failed to talk with master %s: %v", masterNode, err)
 		return "", err
@@ -271,7 +273,8 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 
 	for {
 		select {
-    // 新建volume通过tology的管道通知发送
+		
+    		// 新建volume通过tology的管道通知发送
 		case volumeMessage := <-vs.store.NewVolumesChan:
 			deltaBeat := &master_pb.Heartbeat{
 				NewVolumes: []*master_pb.VolumeShortInformationMessage{
@@ -283,7 +286,8 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 				glog.V(0).Infof("Volume Server Failed to update to master %s: %v", masterNode, err)
 				return "", err
 			}
-    // 删除volume通过tology的管道通知发送
+			
+    		// 删除volume通过tology的管道通知发送
 		case volumeMessage := <-vs.store.DeletedVolumesChan:
 			deltaBeat := &master_pb.Heartbeat{
 				DeletedVolumes: []*master_pb.VolumeShortInformationMessage{
@@ -295,7 +299,8 @@ func (vs *VolumeServer) doHeartbeat(ctx context.Context, masterNode, masterGrpcA
 				glog.V(0).Infof("Volume Server Failed to update to master %s: %v", masterNode, err)
 				return "", err
 			}
-    // 周期发送
+			
+    		// 周期发送
 		case <-volumeTickChan:
 			glog.V(4).Infof("volume server %s:%d heartbeat", vs.store.Ip, vs.store.Port)
 			if err = stream.Send(vs.store.CollectHeartbeat()); err != nil {
