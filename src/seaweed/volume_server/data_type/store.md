@@ -2,15 +2,15 @@
 
 ```go
 type Store struct {
-	MasterAddress       string					// master addr
+	MasterAddress       string		// master addr
 	grpcDialOption      grpc.DialOption
-	volumeSizeLimit     uint64 					// read from the master, 默认 30G
+	volumeSizeLimit     uint64 		// read from the master, 默认 30G
 	Ip                  string
 	Port                int
 	PublicUrl           string
 	Locations           []*DiskLocation
-	dataCenter          string 					//optional informaton, overwriting master setting if exists
-	rack                string 					//optional information, overwriting master setting if exists
+	dataCenter          string 		//optional informaton, overwriting master setting if exists
+	rack                string 		//optional information, overwriting master setting if exists
 	connected           bool
 	NeedleMapType       NeedleMapType
 	NewVolumesChan      chan master_pb.VolumeShortInformationMessage
