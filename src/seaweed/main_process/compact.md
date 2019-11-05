@@ -26,7 +26,8 @@ func batchVacuumVolumeCheck(grpcDialOption grpc.DialOption, vl *VolumeLayout, vi
 	ch := make(chan bool, locationlist.Length())
 	for index, dn := range locationlist.list {
 		go func(index int, url string, vid needle.VolumeId) {
-      // 调用grpc向volume_server发送请求
+		
+      			// 调用grpc向volume_server发送请求
 			err := operation.WithVolumeServerClient(url, grpcDialOption, func(volumeServerClient volume_server_pb.VolumeServerClient) error {
 				resp, err := volumeServerClient.VacuumVolumeCheck(context.Background(), &volume_server_pb.VacuumVolumeCheckRequest{
 					VolumeId: uint32(vid),
@@ -36,7 +37,8 @@ func batchVacuumVolumeCheck(grpcDialOption grpc.DialOption, vl *VolumeLayout, vi
 					return err
 				}
 				isNeeded := resp.GarbageRatio > garbageThreshold
-        // 通过管道返回结果
+        			
+				// 通过管道返回结果
 				ch <- isNeeded
 				return nil
 			})
@@ -47,7 +49,7 @@ func batchVacuumVolumeCheck(grpcDialOption grpc.DialOption, vl *VolumeLayout, vi
 	}
 	isCheckSuccess := true
   
-  // 通过for循环可以看出来，必须所有的dn都表示需要超过闸值才能进行compact
+  	// 通过for循环可以看出来，必须所有的dn都表示需要超过闸值才能进行compact
 	for _ = range locationlist.list {
 		select {
 		case canVacuum := <-ch:
@@ -76,7 +78,7 @@ volume_server侧batchVacuumVolumeCheck的逻辑只是单纯的返回garbageRatio
 ```go
 unc (v *Volume) Compact(preallocate int64, compactionBytePerSecond int64) error {
 
-  // 如果在allocvolume是指定了文件缓存则不进行compact
+  	// 如果在allocvolume是指定了文件缓存则不进行compact
 	if v.MemoryMapMaxSizeMb == 0 { //it makes no sense to compact in memory
 		glog.V(3).Infof("Compacting volume %d ...", v.Id)
 		v.isCompacting = true
@@ -89,9 +91,9 @@ unc (v *Volume) Compact(preallocate int64, compactionBytePerSecond int64) error 
 		v.lastCompactRevision = v.SuperBlock.CompactionRevision
 		glog.V(3).Infof("creating copies for volume %d ,last offset %d...", v.Id, v.lastCompactIndexOffset)
     
-    // 创建数据备份文件（.cpd）和索引备份文件（.cpx），并且逐条读取数据写入备份文件
-    // 扫描数据文件时使用scanner结构，其中使用了btree作为中间文件的索引结构关联备份索引文件？为啥呢
-    // 还会根据参数控制compact的速度
+    		// 创建数据备份文件（.cpd）和索引备份文件（.cpx），并且逐条读取数据写入备份文件
+    		// 扫描数据文件时使用scanner结构，其中使用了btree作为中间文件的索引结构关联备份索引文件？为啥呢
+    		// 还会根据参数控制compact的速度
 		return v.copyDataAndGenerateIndexFile(filePath+".cpd", filePath+".cpx", preallocate, compactionBytePerSecond)
 	} else {
 		return nil
@@ -107,7 +109,7 @@ unc (v *Volume) Compact(preallocate int64, compactionBytePerSecond int64) error 
 
 ```go
 func (v *Volume) CommitCompact() error {
-  // 判断是否有缓存
+  	// 判断是否有缓存
 	if v.MemoryMapMaxSizeMb == 0 { //it makes no sense to compact in memory
 		glog.V(0).Infof("Committing volume %d vacuuming...", v.Id)
 
@@ -128,10 +130,10 @@ func (v *Volume) CommitCompact() error {
 		stats.VolumeServerVolumeCounter.WithLabelValues(v.Collection, "volume").Dec()
 
 		var e error
-    /* 做一些完整性校验（文件大小是否可以包含证书和索引的大小）
-     * 追加diff，虽然在batchVacuumVolumeCompact阶段会将volume从可写集合摘除（master侧逻辑）
-     * 但是摘除期间还是有时间diff，期间可能有数据写入，所以要追加一下diff
-     */
+    		/* 做一些完整性校验（文件大小是否可以包含证书和索引的大小）
+     		 * 追加diff，虽然在batchVacuumVolumeCompact阶段会将volume从可写集合摘除（master侧逻辑）
+    		 * 但是摘除期间还是有时间diff，期间可能有数据写入，所以要追加一下diff
+     		 */
 		if e = v.makeupDiff(v.FileName()+".cpd", v.FileName()+".cpx", v.FileName()+".dat", v.FileName()+".idx"); e != nil {
 			glog.V(0).Infof("makeupDiff in CommitCompact volume %d failed %v", v.Id, e)
 			e = os.Remove(v.FileName() + ".cpd")
@@ -143,7 +145,8 @@ func (v *Volume) CommitCompact() error {
 				return e
 			}
 		} else {
-      // rename 本分文件为线上使用文件
+		
+      			// rename 本分文件为线上使用文件
 			var e error
 			if e = os.Rename(v.FileName()+".cpd", v.FileName()+".dat"); e != nil {
 				return fmt.Errorf("rename %s: %v", v.FileName()+".cpd", e)
@@ -153,11 +156,11 @@ func (v *Volume) CommitCompact() error {
 			}
 		}
 
-    // 删除索引文件btree（bdb）
+    		// 删除索引文件btree（bdb）
 		os.RemoveAll(v.FileName() + ".ldb")
 		os.RemoveAll(v.FileName() + ".bdb")
 
-    // 加载文件
+    		// 加载文件
 		glog.V(3).Infof("Loading volume %d commit file...", v.Id)
 		if e = v.load(true, false, v.needleMapKind, 0); e != nil {
 			return e
@@ -180,7 +183,7 @@ func (v *Volume) CommitCompact() error {
 func (v *Volume) cleanupCompact() error {
 	glog.V(0).Infof("Cleaning up volume %d vacuuming...", v.Id)
 
-  // 清理失败的备份文件
+  	// 清理失败的备份文件
 	e1 := os.Remove(v.FileName() + ".cpd")
 	e2 := os.Remove(v.FileName() + ".cpx")
 	if e1 != nil {
