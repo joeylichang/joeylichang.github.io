@@ -31,7 +31,7 @@ func (vs *VolumeServer) VolumeCopy(ctx context.Context, req *volume_server_pb.Vo
 	err := operation.WithVolumeServerClient(req.SourceDataNode, vs.grpcDialOption, func(client volume_server_pb.VolumeServerClient) error {
 		var err error
     
-    // 先获取.dat、.idx文件的stat信息
+    		// 先获取.dat、.idx文件的stat信息
 		volFileInfoResp, err = client.ReadVolumeFileStatus(ctx,
 			&volume_server_pb.ReadVolumeFileStatusRequest{
 				VolumeId: req.VolumeId,
@@ -67,7 +67,7 @@ func (vs *VolumeServer) VolumeCopy(ctx context.Context, req *volume_server_pb.Vo
 		return nil, err
 	}
 
-  // 校验和之前获取的文件state信息是否相符
+  	// 校验和之前获取的文件state信息是否相符
 	if err = checkCopyFiles(volFileInfoResp, idxFileName, datFileName); err != nil { // added by panyc16
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (vs *VolumeServer) CopyFile(req *volume_server_pb.CopyFileRequest, stream v
 		}
 	}
 
-  // 之前目标dn发起state请求时候文件大小，后面通过tail追加
+  	// 之前目标dn发起state请求时候文件大小，后面通过tail追加
 	bytesToRead := int64(req.StopOffset)
 
 	file, err := os.Open(fileName)
@@ -126,7 +126,7 @@ func (vs *VolumeServer) CopyFile(req *volume_server_pb.CopyFileRequest, stream v
 		if int64(bytesread) > bytesToRead {
 			bytesread = int(bytesToRead)
 		}
-    // 发送数据
+    		// 发送数据
 		err = stream.Send(&volume_server_pb.CopyFileResponse{
 			FileContent: buffer[:bytesread],
 		})
@@ -162,7 +162,7 @@ func (vs *VolumeServer) VolumeTailSender(req *volume_server_pb.VolumeTailSenderR
 	drainingSeconds := req.IdleTimeoutSeconds
 
 	for {
-    // 根据lastTimestampNs 二分查找发送需要的数据
+    		// 根据lastTimestampNs 二分查找发送需要的数据
 		lastProcessedTimestampNs, err := sendNeedlesSince(stream, v, lastTimestampNs)
 		if err != nil {
 			glog.Infof("sendNeedlesSince: %v", err)
@@ -170,13 +170,14 @@ func (vs *VolumeServer) VolumeTailSender(req *volume_server_pb.VolumeTailSenderR
 		}
 		time.Sleep(2 * time.Second)
 
-    // 为0表示在同步完数据等待期间有数据发送需要重新开始
+    		// 为0表示在同步完数据等待期间有数据发送需要重新开始
 		if req.IdleTimeoutSeconds == 0 {
 			lastTimestampNs = lastProcessedTimestampNs
 			continue
 		}
-    // 表示最后一条数据在之前的copy已经发送了，没有新数据drainingSeconds进行记时
-    // 前面sleep一次是2s，所以相当于等了drainingSeconds * 2
+		
+    		// 表示最后一条数据在之前的copy已经发送了，没有新数据drainingSeconds进行记时
+    		// 前面sleep一次是2s，所以相当于等了drainingSeconds * 2
 		if lastProcessedTimestampNs == lastTimestampNs {
 			drainingSeconds--
 			if drainingSeconds <= 0 {
@@ -184,7 +185,8 @@ func (vs *VolumeServer) VolumeTailSender(req *volume_server_pb.VolumeTailSenderR
 			}
 			glog.V(1).Infof("tailing volume %d drains requests with %d seconds remaining", v.Id, drainingSeconds)
 		} else {
-      // 到这里说明在copy只有有数据追加，需要更新一下时间重新计数
+		
+      			// 到这里说明在copy只有有数据追加，需要更新一下时间重新计数
 			lastTimestampNs = lastProcessedTimestampNs
 			drainingSeconds = req.IdleTimeoutSeconds
 			glog.V(1).Infof("tailing volume %d resets draining wait time to %d seconds", v.Id, drainingSeconds)
