@@ -30,7 +30,7 @@
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
 	* data organization
 		* [master meta data](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/tupo.md)
-		* [volume data organization](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
+		* [volume data orga](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
 	* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
 	* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
 * **Reading notes**
