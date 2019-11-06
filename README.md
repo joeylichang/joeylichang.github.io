@@ -32,7 +32,7 @@
 		* [master meta data](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/tupo.md)
 		* [volume data organization](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
 	* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
-	* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/weed_shell/overview.md)
+	* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
 * **Reading notes**
 	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
 	* [数据密集型应用系统设计](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/data_intensive_sys_desgin/navigatiom.md)
