@@ -3,8 +3,8 @@
 ```c++
 class Tablet {
   protected:
-  	mutable Mutex mutex_;							// tablet 变量修改的锁
-  	TabletMeta meta_; 								// pb结构，描述tablete，后面介绍
+  	mutable Mutex mutex_;       // tablet 变量修改的锁
+  	TabletMeta meta_;           // pb结构，描述tablete，后面介绍
   	TabletStateMachine state_machine_;// tablet 状态转换机，后面介绍
   private:
   	TabletNodePtr node_;							// tablet 归属的节点
