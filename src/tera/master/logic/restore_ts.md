@@ -1,4 +1,4 @@
-# Master 收集Ts信息逻辑
+# Master 收集mste_tablet信息逻辑
 
 ### 主要步骤
 
