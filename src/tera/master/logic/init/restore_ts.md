@@ -90,4 +90,4 @@ bool MasterImpl::TryKickTabletNode(TabletNodePtr node) {
 
 可以看到上述逻辑中并没有将节点从集群删除，而是在zk中添加到一个新的目录中，并对节点的状态进行了更新，这里就有必要看一下节点的状态机。
 
-![tera_tabke_node_state](../../../../images/tera_tabke_node_state.png)
+![tera_tabke_node_state](../../../../../images/tera_tabke_node_state.png)

@@ -128,4 +128,4 @@ void MasterImpl::RestoreUserTablet(const std::vector<TabletMeta> &report_meta_li
 
 tablet的状态转换图，如下所示：
 
-![tera_tablet_state_change](../../../../images/tera_tablet_state_change.png)
+![tera_tablet_state_change](../../../../../images/tera_tablet_state_change.png)
