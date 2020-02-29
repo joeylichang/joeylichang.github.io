@@ -4,7 +4,7 @@
 
 master 通过zk实现抢主逻辑，在内部维持一个状态机，抢主成功之后将从初始化的从变为Restore状态，去加载TableNode，Mater状态机的流程如下：
 
-![tera_master_state](../../../../images/tera_master_state.png)
+![tera_master_state](../../../../../images/tera_master_state.png)
 
 ### Master 初始化时与ZK交互的节点
 
@@ -40,7 +40,7 @@ bool MasterZkAdapter::Init(std::string* root_tablet_addr,
     return false;         // 注意：初始化的时候进行了watch的回调设置
   }
 
-  if (!LockMasterLock()) {  // 同步抢占锁，如果抢占失败一直卡在这里，内部是信号量 + 锁实现
+  if (!LockMasterLock()) {  // 同步抢占锁，如果抢占失败一直等，内部是信号量 + 锁实现
     Reset(); 	              // zk 清理工作
     return false;
   }
