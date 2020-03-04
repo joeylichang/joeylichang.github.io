@@ -1,8 +1,8 @@
 # 概述
 
-LevelDB 是Google开源的单机KV存储引擎，很多开源项目——例如 Cassandra、SSDB、TiKV等也有很多用FB的RocksDB对LevelDB进行了一些优化（后续文章介绍）——都是用了类似架构的存储引擎。
+LevelDB 是Google开源的单机KV存储引擎，很多开源项目——例如 Cassandra、SSDB、TiKV等也有很多用FB的RocksDB对LevelDB进行了一些优化（后续文章介绍）——都使用了类似架构的存储引擎。
 
-LevelDB落盘文件是SST文件（Sort String Table），既排序的键值对，这种文件格式的优点是非常适合离线计算的批量读写操作。但是仅仅一个SST文件又是不够的，比如对某个键值对的随机写会影响性能，又或者是随机读也会影响性能，再或者是删除操作也有同样的问题。所以需要一些外围约束或者逻辑保证一些列的SST文件可供上层使用。LevelDB正是这些约束或者逻辑实现的一个开源版本，2011年3月由Google架构师 [Jeff Dean](https://ai.google/research/people/jeff)和[Sanjay Ghemawat](https://ai.google/research/people/SanjayGhemawat) 开源，他们曾是Bigtable和SST的早期架构师。
+LevelDB落盘文件是SST文件（Sort String Table），既排序的键值对，这种文件格式的优点是非常适合离线计算的批量读写操作。但是仅仅一个SST文件又是不够的，比如对某个键值对的随机写会影响性能，又或者是随机读也会影响性能，再或者是删除操作也有同样的问题。所以需要一些外围约束或者逻辑保证一系列的SST文件可供上层使用。LevelDB正是这些约束或者逻辑实现的一个开源版本，2011年3月由Google架构师 [Jeff Dean](https://ai.google/research/people/jeff)和[Sanjay Ghemawat](https://ai.google/research/people/SanjayGhemawat) 开源，他们曾是Bigtable和SST的早期架构师。
 
 
 
