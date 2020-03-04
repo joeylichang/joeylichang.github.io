@@ -1,6 +1,6 @@
 # LevelDB 元信息
 
-DB在每次compact之后都有sst等元信息变更（增加、删除等）。snapshot针对某一时刻的db数据快照，每次compact之后又不能删除之前snapshot的数据，需要一个机制DB的变更清理无用数据，保留必要数据。
+DB在每次compact之后都有sst等元信息变更（增加、删除等）。snapshot针对某一时刻的db数据快照，每次compact之后又不能删除之前snapshot的数据，需要一个机制保证DB的变更清理无用数据，保留必要数据。
 
 在leveldb中，VersionEdit记录了每次compact的变更，VersionEdit作用在version上形成当前可用的Version，多个Version组成了VersionSet保证了多版本的共存，调用db的open之后会通过mainfest文件恢复相关信息。
 
