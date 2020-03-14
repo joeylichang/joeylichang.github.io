@@ -337,7 +337,7 @@
 
 12. memtable_shard_num
 
-    TableCache（ShardedMemTable）分片的数量，默认值是4。如果是KV结构则，不使用ShardedMemTable，而是MemTableOnLevelDB或者BaseMemTable，配置是0。KV需要Get接口，其他接口时通过迭代器获取（因为ShardedMemTable组装了多个TableCache）数据。所以ShardedMemTable，不支持Get。MemTableOnLevelDB 和 BaseMemTable 支持Get接口。
+    MemTable（ShardedMemTable）分片的数量，默认值是4。如果是KV结构则，不使用ShardedMemTable，而是MemTableOnLevelDB或者BaseMemTable，配置是0。KV需要Get接口，其他接口时通过迭代器获取（因为ShardedMemTable组装了多个TableCache）数据。所以ShardedMemTable，不支持Get。MemTableOnLevelDB 和 BaseMemTable 支持Get接口。
 
 ##### LeavelDB原有配置
 
