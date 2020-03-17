@@ -40,11 +40,20 @@ TableServer 的读、Scan、Quta请求的调度策略都是相同的，类图及
 
 整个调度的策略，在RPC远程调用做一下队列的缓冲。
 
-1. RpcSchedule内部维护typedef std::map<TableName, ScheduleEntity*> TableList; 既表名 -> rpc请求队列（read、scan、quota是三个RpcSchedule）。
-2. ScheduleEntity是队列中的一个节点，内部有一个指针指向队列头。
-3. RpcSchedule 维护三个重要接口EnqueueRpc、DequeueRpc、FinishRpc。
-4. 请求进来后调用EnqueueRpc，加入threadpool进行调度，在回调中调用DequeueRpc 根据FairSchedulePolicy选择队列中的FairScheduleEntity进行执行，执行完调用FinishRpc。
-5. 整个生命流程中维护RpcSchedule 的 成员变量，pending_task_count_、running_task_count_，以及task_queue的pending_count、running_count 以及 FairScheduleEntity的last_update_time、elapse_time、running_count。
-   1. 注意上面维护的统计变量的维度，包括RpcSchedule维度、表维度、RPC维度。
-6. FairSchedulePolicy维护Pick、Done、Enable、Disable、UpdateEntity五个接口。
-   1. Pick：
+RpcSchedule 内部维护 表名 -> 调度单元的映射（既std::map<TableName, ScheduleEntity*> TableList），调度单元（ScheduleEntity）内部有有一个队列（既TaskQueue）记录RPC任务（既RpcTask）。
+
+RpcSchedule 维护三个重要接口EnqueueRpc、DequeueRpc、FinishRpc。
+
+1. EnqueueRpc：通过tablename 获取调度单元，再获取对应的队列，将RpcTask加入队列。如果TaskQueue的pending_count不为0，则调用FairSchedulePolicy的Enable的接口，将调度单元设置为可调度。
+
+2. DequeueRpc：调用FairSchedulePolicy的pick接口获取要执行的RpcTask。Pick的策略是遍历std::map<TableName, ScheduleEntity*> TableList，判断当前调度单元（ScheduleEntity）是否是enable，如果是取出队列，从头部取出一个RpcTask区执行。如果调度单元的pending_count为0，则调用FairSchedulePolicy的Disable接口将调度单元（ScheduleEntity）设置为不可调度
+
+   ##### 注意：如果一个table积压的任务较多，其他table的任务可能长时间等地啊，因超时饿死。
+
+3. FinishRpc：调用FairSchedulePolicy的Done的接口，更新调度单元（ScheduleEntity）的统计数据。
+
+##### 注意：整个调度策略为了不同维度的统计数据，主要包括一下
+
+1. RpcSchedule： pending_task_count_、running_task_count_（整个调度实例的运行 和 挂起的任务数量，read、scan、quota是三个调度实例）
+2. TaskQueue：一个表对应一个TaskQueue，既表维度的pending_count、running_count。
+3. FairScheduleEntity：调度单元，也是表维度的pickable（是否可调度，取决于TaskQueue的pending_count是否大于0）、last_update_time（调度单元最后一次更新时间）、elapse_time（调度单元总耗时）、running_count（调度单元总运行rpc数量）
