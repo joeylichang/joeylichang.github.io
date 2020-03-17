@@ -243,6 +243,8 @@ bool TabletWriter::Write(std::vector<const RowMutationSequence*>* row_mutation_v
   active_buffer_->push_back(task);
   active_buffer_size_ += request_size;
   active_buffer_instant_ |= is_instant;
+  
+  // 如果buffer超过设置的闸值（1M）或者请求中设置了is_instant 立即刷盘参数，则立即切换buffer 刷盘
   if (active_buffer_size_ >= FLAGS_tera_asyncwriter_sync_size_threshold * 1024UL ||
       active_buffer_instant_) {
     write_event_.Set();
@@ -349,5 +351,8 @@ void TabletNodeImpl::WriteTabletCallback(WriteTabletTask* tablet_task,
 }
 ```
 
-##### 注意：此时tablet_task->response->mutable_row_status_list()->Set(index, (*status_vec)[i]) 回填的是leveldb层真实的是否写入成功，但是用户并没有获得此状态，只要是写入tabletwriter的内存中既返回给用户。
+##### 注意
 
+1. 此时tablet_task->response->mutable_row_status_list()->Set(index, (*status_vec)[i]) 回填的是leveldb层真实的是否写入成功，但是用户并没有获得此状态，只要是写入tabletwriter的内存中既返回给用户。
+2. 如果write请求中有设置is_instant参数，则会立即刷盘，但是用户依然看不到是否真的写入leveldb的结果。
+3. 总结：写入leveldb是异步。
