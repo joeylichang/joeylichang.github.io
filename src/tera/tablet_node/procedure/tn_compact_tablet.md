@@ -3,10 +3,14 @@
 TabletNode 对tablet进行压缩时，调用的是leveldb的手动压缩接口（启动一个新的线程进行压缩。tera的优化），请求中需要制定lg（既一次压缩一个DB）。如果不指定，则逐个遍历DB进行压缩。各层主要工作如下：
 
 1. RemoteTabletNode::CompactTablet
+
    1. 将任务加到压缩线程池（默认配置2个线程进行压缩）。
    2. 如果没有SlowdownMode，则等待返回结果在返回response，如果进入SlowdownMode则直接返回response，状态设置为kFlowControlLimited。
+
 2. TabletNodeImpl::CompactTablet：调用TabletIO的Compact手动压缩接口，然后调用TabletIO的GetCompactStatus获取当前的压缩状态并返回。
-   1. 注意：Compact调用leveldb的CompactRange是异步执行压缩，但是其内部会调用线程的join接口等待压缩完成之后再返回，会不会很耗时呢？RPC会不会已经超时了呢？
+
+   ##### 注意：Compact调用leveldb的CompactRange是异步执行压缩，但是其内部会调用线程的join接口等待压缩完成之后再返回，会不会很耗时呢？RPC会不会已经超时了呢？
+
 3. TabletIO::Compact：调用LevelDB的CompactRange接口，需要制定lg，在leveldb内部会启动新的线程进行压缩（详细介绍见leveldb部分）。
 
 
