@@ -21,7 +21,7 @@ TabletServer write tablet 主要经过四层的流转，每层主要工作如下
    3. 调用TabletIO的WriteBatch接口，其内部调用leveldb::Write将数据写入LevelDB。
    4. 执行完本次操作（一个请求的若干个tablet 写操作中的一个），调用TabletNodeImpl的WriteTabletCallback接口，统计所有tablet的执行情况。
 
-   ##### 注意：TabletWriter 是双buffer机制，写入内存既直接返回，只有在BGWork执行之后才知道是否真的写入成功。
+   ##### 注意：TabletWriter 是双buffer机制，待写入leveldb之后会调用TabletNodeImpl层的WriteTabletCallback回调函数，当写入的数据是请求中的数据条目时，会调用RPC的Run方法完成请求，问题是请求的延时增长了，默认是buffer写满和10ms有一个满足就写leveldb，按10ms计算批量写入时有一个5ms的平均延时。
 
 ### RemoteTabletNode::WriteTablet
 
@@ -193,7 +193,7 @@ bool TabletIO::Write(std::vector<const RowMutationSequence*>* row_mutation_vec,
     db_ref_count_++;
   }
   
-  // 调用tabletwriter的接口，内部是双buffer，写入内存之后直接返回客户端
+  // 调用tabletwriter的接口，内部是双buffer，写入内存之后待批量刷leveldb
   bool ret = async_writer_->Write(row_mutation_vec, status_vec, is_instant, callback, status);
   if (!ret) {
     counter_.write_reject_rows.Add(row_mutation_vec->size());
@@ -340,6 +340,8 @@ void TabletNodeImpl::WriteTabletCallback(WriteTabletTask* tablet_task,
   }
 
   if (tablet_task->row_done_counter->Add(index_num) == tablet_task->request->row_list_size()) {
+    
+    // 此处才真正的结束一个请求，期间等待了一个批量写入的等待时间（10ms或者buffer写满）
     tablet_task->done->Run();
     if (NULL != tablet_task->timer) {
       RpcTimerList::Instance()->Erase(tablet_task->timer);
@@ -353,6 +355,9 @@ void TabletNodeImpl::WriteTabletCallback(WriteTabletTask* tablet_task,
 
 ##### 注意
 
-1. 此时tablet_task->response->mutable_row_status_list()->Set(index, (*status_vec)[i]) 回填的是leveldb层真实的是否写入成功，但是用户并没有获得此状态，只要是写入tabletwriter的内存中既返回给用户。
-2. 如果write请求中有设置is_instant参数，则会立即刷盘，但是用户依然看不到是否真的写入leveldb的结果。
-3. 总结：写入leveldb是异步。
+1. 此时tablet_task->response->mutable_row_status_list()->Set(index, (*status_vec)[i]) 回填的是leveldb层真实的是否写入成功。
+2. 如果write请求中有设置is_instant参数，则会立即刷盘，是时间换吞吐。
+3. 总结：
+   1. 写入leveldb可以用吞吐 和 延时的balance，因为写入的是DFS与本地leveldb的追加写还是有所区别的。
+   2. 网络交互的延迟会更高一些如果不增加每次写入，吞吐势必有影响。
+   3. 反之，如果做了批量处理，吞吐会上来，但是平均延时会增加。
