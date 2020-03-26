@@ -2,7 +2,7 @@
 
 ### 负载均衡策略
 
-负载均衡策略继承自Scheduler基类，各自继承实现具体分策略，分为流量负载均衡和容量负载均衡，各自策略的回调顺序是NeedSchedule、DescendingSort、MayMoveOut、FindBestNode、FindBestTablet。下面具体看一下两种策略中没中回调的逻辑。
+负载均衡策略继承自Scheduler基类，各自继承实现具体分策略，分为流量负载均衡和容量负载均衡，各自策略的回调顺序是NeedSchedule、DescendingSort、MayMoveOut、FindBestNode、FindBestTablet。下面具体看一下两种策略中每种回调的逻辑。
 
 ##### 根据qps进行负载均衡的策略
 
