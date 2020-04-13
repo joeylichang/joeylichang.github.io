@@ -1,4 +1,4 @@
-* **Navigation
+* **Navigation**
   * [system arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md#system-arch)
   * [leveldb character]
   * [consistency]
