@@ -1,39 +1,60 @@
-### table procedure
+* **Navigation**
+  * Table Procedure
+    * create table
+    * disable table
+    * enable table
+    * delete table
+    * update table
+  * Tablet Procedure
+    * load tablet
+    * unload tablet
+    * move tablet
+    * spilt tablet
+    * merge tablet
+  * Client Procedure
+    * update(write/delete)
+    * read
+    * scan
+    * compact
+    * transaction
+      * single row transaction
+      * global transaction
+#### Table procedure
 
-#### create table
+##### create table
 
-#### disable table
+##### disable table
 
-#### enable table
+##### enable table
 
-#### delete table
+##### delete table
 
-#### update table
+##### update table
 
-### tablet procedure
+#### Tablet procedure
 
-#### load tablet
+##### load tablet
 
-#### unload tablet
+##### unload tablet
 
-#### move tablet
+##### move tablet
 
-#### spilt tablet
+##### spilt tablet
 
-#### merge tablet
+##### merge tablet
 
-### client procedure
+#### Client procedure
 
-#### update(write/delete)
+##### update(write/delete)
 
-#### read
+##### read
 
-#### scan
+##### scan
 
-#### compact
+##### compact
 
-### transaction
+##### transaction
 
-#### single row transaction
+###### single row transaction
 
-#### global transaction
+###### global transaction
