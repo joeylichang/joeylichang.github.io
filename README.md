@@ -34,16 +34,7 @@
 	* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#main_process)
 	* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
 * **tera**
-	* overview
-		* system arch
-		* leveldb character
-		* meta data
-			* zk meta
-			* meta table(t)
-			* dfs dir
-			* persistent cache
-		* consistency
-		* data schema
+	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
 	* master introduce
 		* master arch
 		* master init
