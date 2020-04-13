@@ -35,45 +35,10 @@
 	* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
 * **tera**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
-	* master introduce
-		* master arch
-		* master init
-		* master state machine
-		* master period task
-		* tabletnode state machine
-		* disaster desgin
-		* load balance
-		* garbage collection
-		* access control
-		* quta
-	* tabletnode introduce
-		* tabletnode arch
-		* leveldb opt
-	* procedure
-		* table procedure
-			* create table
-			* disable table
-			* enable table
-			* delete table
-			* update table
-		* tablet procedure
-			* load tablet
-			* unload tablet
-			* move tablet
-			* spilt tablet
-			* merge tablet
-		* client procedure
-			* update(write/delete)
-			* read
-			* scan
-			* compact
-		* transaction
-			* single row transaction
-			* global transaction
-	* other
-		* monitor
-		* observer
-	* thinkin
+	* [master introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md)
+	* [tabletnode introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/tablenode_overview.md)
+	* [procedure introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md)
+	* [thinkin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/thinkin.md)
 		
 * **Reading notes**
 	* [大规模分布式存储系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/read_node/distributed_system_design/navigation.md)
