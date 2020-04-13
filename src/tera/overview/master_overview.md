@@ -1,20 +1,34 @@
-### master arch
+* **Navigation**
+  * master arch
+  * master state machine
+  * master init
+  * master period task
+    * load balance
+    * garbage collection
+  * tabletnode state machine
+  * disaster desgin
+  * load balance
+  * garbage collection
+  * access control
+  * quta
 
-### master init
+#### master arch
 
-### master state machine
+#### master state machine
 
-### master period task
+#### master init
 
-### tabletnode state machine
+#### master period task
 
-### disaster desgin
+##### load balance
 
-### load balance
+##### garbage collection
 
-### garbage collection
+#### tabletnode state machine
 
-### access control
+#### disaster desgin
 
-### quta
+#### access control
+
+#### quta
 
