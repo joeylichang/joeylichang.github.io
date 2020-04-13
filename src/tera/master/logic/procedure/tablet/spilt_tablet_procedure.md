@@ -11,6 +11,7 @@ Master侧拆分Tablet的流程，如下：
 5. 更新元数据添加联调tablet元数据。
 6. 更新master内存数据。
 7. 通过load_tablet流程加载两个新的tablet。
+   1. 重点在这，
 
 ### kPreSplitTablet
 
@@ -102,6 +103,35 @@ bool SplitTabletProcedure::TabletStatusCheck() {
 ### kUpdateMeta
 
 ```c++
+void SplitTabletProcedure::UpdateMeta() {
+  std::vector<MetaWriteRecord> records;
+
+  std::string parent_path = tablet_->GetPath();
+  TablePtr table = tablet_->GetTable();
+  std::string child_key_start = tablet_->GetKeyStart();
+  std::string child_key_end = split_key_;
+  for (int i = 0; i < 2; ++i) {
+    TabletMeta child_meta;
+    tablet_->ToMeta(&child_meta);
+    child_meta.clear_parent_tablets();
+    child_meta.set_status(TabletMeta::kTabletOffline);
+    child_meta.add_parent_tablets(leveldb::GetTabletNumFromPath(parent_path));
+    child_meta.set_path(leveldb::GetChildTabletPath(parent_path, table->GetNextTabletNo()));
+    child_meta.mutable_key_range()->set_key_start(child_key_start);
+    child_meta.mutable_key_range()->set_key_end(child_key_end);
+    child_meta.set_size(tablet_->GetDataSize() / 2);
+    child_meta.set_version(tablet_->Version() + 1);
+    child_tablets_[i].reset(new Tablet(child_meta, table));
+    child_key_start = child_key_end;
+    child_key_end = tablet_->GetKeyEnd();
+    PackMetaWriteRecords(child_tablets_[i], false, records);
+  }
+
+  UpdateMetaClosure done = std::bind(&SplitTabletProcedure::UpdateMetaDone, this, _1);
+  PROC_LOG(INFO) << "[split] update meta async: " << tablet_;
+  MasterEnv().BatchWriteMetaTableAsync(records, done, -1);
+}
+
 void SplitTabletProcedure::UpdateMetaDone(bool) {
   TabletMeta first_meta, second_meta;
   child_tablets_[0]->ToMeta(&first_meta);

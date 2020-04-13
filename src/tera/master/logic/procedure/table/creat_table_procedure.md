@@ -4,7 +4,7 @@ Master侧对 Create Table分为了4个阶段，既kPrepare, kUpdateMeta, kLoadTa
 
 ### PreCheckHandler
 
-kPrepare阶段，Master对请求参数进行校验，原数组组织等工作。
+kPrepare阶段，Master对请求参数进行校验，元数据组织等工作。
 
 ```C++
 void CreateTableProcedure::PreCheckHandler(const CreateTablePhase&) {
