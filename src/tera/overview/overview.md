@@ -118,7 +118,7 @@ kick：Master 在一些异常情况下 会认为节点故障，对其进行KickO
 4. /tera/ts  被删除，标记集群进度safemode。
 5. /tera/ts 有变更，会更新内存中的数据。
 
-详情见[Master中zk元数据部分]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#zk%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%84%E7%BB%87](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#zk中的数据组织))
+详情见[Master中zk元数据部分]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#zk%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%84%E7%BB%87](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#zk中的数据组织)) 和 [Master-ZK 交互逻辑]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/zk_master.md#master-zk-%E4%BA%A4%E4%BA%92%E9%80%BB%E8%BE%91](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/zk_master.md#master-zk-交互逻辑))
 
 
 
