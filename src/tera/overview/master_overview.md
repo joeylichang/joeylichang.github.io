@@ -37,20 +37,20 @@ Master 核心的类架构图如上所示，上述类图过于详细繁杂，下�
 
 ```c++
 |_MasterEntry
-  |_RemoteMaster(ThreadPool_A)
-  |_RemoteMultiTenancyService(ThreadPool_A)
+  |_RemoteMaster                ThreadPool_A（10）
+  |_RemoteMultiTenancyService   ThreadPool_A（10）
   		|
-  		|_MasterImpl(ThreadPool_B)
-  		|_TabletManager(ThreadPool_B)
+  		|_MasterImpl                ThreadPool_B（20）
+  		|_TabletManager             ThreadPool_B（20）
   				|
-  				|_query_thread_pool_(ThreadPool_C)
+  				|_query_thread_pool_      ThreadPool_C（20）
 ```
 
 Master 主要有三个线程池，负责 响应 Table、Tablet 的 RPC（RemoteMaster）服务 以及 响应 权限、Quta的 RPC（RemoteMultiTenancyService服务）共用一个线程池（默认10个线程）。
 
 MasterImpl 和 TabletManager 公用一个线程池，MasterImpl主要是一些周期性任务 和 向TabletNode 发送请求等 、 TabletManager 会向 TabletNode 发送请求、各种Procedure（Table 创建、Tablet搬迁等刘海成） 会使用多线程完成，他们共一个线程池（默认20个线程）。
 
-MasterImpl 内部 还有一个线程池 query_thread_pool_ 专门用于心跳探测，默认20个线程。加上主线程 Master模块默认使用41个线程。
+MasterImpl 内部 还有一个线程池 query_thread_pool_ 专门用于心跳探测，默认20个线程。加上主线程 Master模块默认使用51个线程。
 
 
 
