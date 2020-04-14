@@ -11,25 +11,25 @@
   * [AccessControl](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#access-control)
   * [Quta](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#quta)
 
-#### Master Arch
+### Master Arch
 
-#### Master State Machine
+### Master State Machine
 
-#### Master Init
+### Master Init
 
-#### Master Period Task
+### Master Period Task
 
-##### Load Balance
+#### Load Balance
 
-##### Garbage Collection
+#### Garbage Collection
 
-##### Procedure Arch
+#### Procedure Arch
 
-#### Tabletnode State Machine
+### Tabletnode State Machine
 
-#### Disaster Desgin
+### Disaster Desgin
 
-#### AccessControl
+### AccessControl
 
-#### Quta
+### Quta
 
