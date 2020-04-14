@@ -37,13 +37,13 @@ Master 核心的类架构图如上所示，上述类图过于详细繁杂，下�
 
 ```c++
 |_MasterEntry
-  					|_RemoteMaster
-  					|_RemoteMultiTenancyService
-  					|
-  					|_MasterImpl
-  											|_TabletManager
-  											|
-  											|_query_thread_pool_
+  |_RemoteMaster(ThreadPool_A)
+  |_RemoteMultiTenancyService(ThreadPool_A)
+  		|
+  		|_MasterImpl(ThreadPool_B)
+  		|_TabletManager(ThreadPool_B)
+  				|
+  				|_query_thread_pool_(ThreadPool_C)
 ```
 
 Master 主要有三个线程池，负责 响应 Table、Tablet 的 RPC（RemoteMaster）服务 以及 响应 权限、Quta的 RPC（RemoteMultiTenancyService服务）共用一个线程池（默认10个线程）。
