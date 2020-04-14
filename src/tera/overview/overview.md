@@ -95,11 +95,11 @@ Tera 除了上述逻辑划分的概念 还支持 Locality Group 物理划分，L
 ```C++
 |_tera
       |_master-lock	// master 抢主的锁，抢到锁的master为主master，否则会一直重试不再进行内存元数据加载
-  		|_master 			// 临时节点，抢到主的 master 会注册自身的信息（ip:port）到该节点下
-  		|_root_table 	// 负责 MetaTable 的 TN 的信息（ip:port）
-  		|_safemode 		// 是否处于 安全模式 的标志位
-  		|_ts 					// TN 节点注册的目录，注册节点信息（ip：port）
-  		|_kick 				// master kick_off 的节点会注册在该节点下（后面部分会详细介绍，节点的状态转化）
+  		|_master 			    // 临时节点，抢到主的 master 会注册自身的信息（ip:port）到该节点下
+  		|_root_table 	  // 负责 MetaTable 的 TN 的信息（ip:port）
+  		|_safemode 		   // 是否处于 安全模式 的标志位
+  		|_ts 				 	     // TN 节点注册的目录，注册节点信息（ip：port）
+  		|_kick 				     // master kick_off 的节点会注册在该节点下（后面部分会详细介绍，节点的状态转化）
 ```
 
 safemode：（master）判断是否进入safemode的标准，故障 TN 上的 Tablet 是否占总数的10%以上（默认配置）。
