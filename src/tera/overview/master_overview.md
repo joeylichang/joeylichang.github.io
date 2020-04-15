@@ -115,7 +115,7 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
 
       **注意** ：MetaTable 中存储的 Tablet 的状态都是 offline状态，在 load tablet 部分会详细介绍这其原因，其他状态都是 Master 内部维护的状态所以要根据 TabletNode 汇报的实际情况进行处理。Master 中 Tablet 的元数据 以 状态转换图见[Master中的Tablet](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/tablet.md)。
 
-      另外，还需要知道 TabletNode 存储的 Tablet状态有哪些，既kTabletNotInit、kTabletReady、kTabletOnLoad、kTabletUnloading、kTabletUnloading2，对于其他的状态 Master 不需要处理（比较好理解，不在此赘述）。
+      另外，还需要知道 TabletNode 存储的 Tablet状态有哪些，既kTabletNotInit、kTabletReady、kTabletOnLoad、kTabletUnloading、kTabletUnloading2，对于其他的状态 Master 在后面会重新加载（比较好理解，不在此赘述）。
 
    此时，Master 内存中的 Tablet 的元数据 ，通过了与 TableNode 上的实际情况比对并进行了一些处理，还有一些 Tablets 可能存在于 MetaTable（既 Master 内存中）但是 TabletNode 上报中没有，下面要看一下这些 Tablets。遍历 Master 内存中所有的 Tablets：
 
@@ -141,13 +141,50 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
 
 ### Master Period Task
 
+Master 初始化的目的是加载元数据 并 开启一些任务模块保证系统正常运行（这也是协调模块的重要责任），这些任务模块大多是周期性的，所以初始化的最后需要开始周期性的任务，下面看一下Master的周期任务：
+
+1. HeratBeat：周期10s，一定等前一轮心跳结束才会进行下一轮，有同步机制。
+2. GC
+   1. TabletNodeGc：周期60s。
+   2. CleanTrackableGcTrash：周期3600s。
+3. Load Balance：心跳探测完成。
+4. AbnormalNodeMgr：周期60s，尝试重新加入节点。
+5. AvailabilityCheck：周期60s，tablet的可用性统计。
+6. RefreshTableCounter：周期10s，统计信息。
+
+##### HeratBeat
+
+1. 遍历所有的 TableNode 节点发送 Query 请求，并且带有 is_gc_query 参数（启动阶段收集信息的 Query 请求不会设置该参数）。
+2. 如果返回的 Response 的addr 不再 Master 内存，则跳过。
+3. 如果请求失败 或者 节点状态不是 OK，则重试，超过重试次数（10次），则Kick TabletNode。
+4. 遍历 Response 中返回的 Tablet 信息进行校验，然后更新内存信息：
+   1. 返回的 Tablet 如果不在内存，则跳过。
+   2. 返回的 Tablet 的创建时间 < Master 内存中的创建时间（可能已经迁移），则跳过。
+   3. 返回的 Tablet 的 Key 范围在Master 内存相应的表中没找到 overlap，则跳过。
+   4. 如果查找的 overlap 的 Tablet 大于一个，说明这是已经完成 spilt 的 Tablet，则unload。
+   5. 返回的 Tablet 的 Version <  Master 内存中的 Version，且不处于 SafeMode，则unload。
+   6. Master 内存中的 ReadyTime > start_query_time_，说面 Tablet 在心跳期间有变化，则跳过。
+   7. 返回的 Tablet 的 Key 范围，与 Master 内存中的不符合，则跳过。
+   8. 返回的 Tablet 的 路径，与 Master 内存中的不符合，则跳过。
+   9. 返回的 Tablet 的状态，不是kTabletReady，则跳过。
+   10. 返回的 Tablet 的addr，与 Master 内存中的不符合，则跳过。
+   11. 返回的 Tablet 的 Table 被 Disable，则跳过。
+   12. 通过上述校验之后，更新 Tablet 的 update_time_、data_size_on_flash_、[Counter](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablet)、CompactStatus。
+5. 上述
+
+##### Load Balance
+
+
+
+##### Garbage Collection
+
+
+
+##### Abnormal Node
 
 
 
 
-#### Load Balance
-
-#### Garbage Collection
 
 ### Procedure Arch
 
