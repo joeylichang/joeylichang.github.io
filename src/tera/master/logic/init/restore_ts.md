@@ -1,4 +1,4 @@
-# Master 收集mste_tablet信息逻辑
+# Master 收集meta_tablet信息逻辑
 
 ### 主要步骤
 
