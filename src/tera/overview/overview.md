@@ -255,6 +255,16 @@ tablet_no(4B)filenumber_no(4B).sst，sst文件名的组成是tablet_no + filenum
 
 
 
+##### MetaTable 的目录
+
+```c++
+../data/${tablenamt}/meta/0
+```
+
+MetaTable 是系统默认创建的，使用特殊的目录是方便管理 和 随时被 TabletNode 进行加载。并且 MetaTable 只有一个 lg（0）。
+
+
+
 ##### trash 目录
 
 ```c++
