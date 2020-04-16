@@ -25,7 +25,7 @@
 
 1. NeedSchedule
    1. 直接返回true。
-   2. 主要：为什么直接允许调度呢？
+   2. 注意：为什么直接允许调度呢？
 2. DescendingSort
    1. table在该节点上的容量排序。
 3. MayMoveOut

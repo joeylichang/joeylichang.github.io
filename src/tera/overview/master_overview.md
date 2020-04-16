@@ -3,8 +3,10 @@
   * [Master State Machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-state-machine)
   * [Master Init](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-init)
   * [Master Period Task](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-period-task)
-    * [Load Balance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#load-balance)
+    * [HeartBeat](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#heartbeat)
     * [Garbage Collection](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#garbage-collection)
+    * [Load Balance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#load-balance)
+    * [Abnormal](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#abnormal)
   * [Procedure Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#procedure-arch)
   * [Tabletnode State Machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-state-machine)
   * [Disaster Desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#disaster-desgin)
@@ -67,7 +69,7 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
 ### Master Init
 
 1. 向所有的 TabletNode 节点发送 Query 请求，目的是更新 TableNode 的内存信息 和 获取全部的 Tablets 信息。
-   
+  
    1. 根据 ZK 中 /tera/ts 子节点的 TabletNode 信息向所有的节点发送 Query 请求，通过信号量实现同步机制，保证所有的 Query 请求都收到回复 或者 重试失败 才继续向下进行。
    
    2. Query 返回的信息主要包括两部分，一部分是 TabletNode 信息，另一部分是 TableNode 负责的 Tablets 信息，收集的 TabletNode 更新内存中 TabletNodeManager 中相应的节点信息（TabletNode 在 Master 内的元数据详情见[TabletNode元数据解析](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablenodes)）。
@@ -130,7 +132,7 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
    1. 遍历 Master 内存中所有的 Tablet。
    2. 选出处于 kTabletOffline 状态，且所在节点为非Ready状态的 Tablet，进行重新选取节点进行加载（选取策略根据 LB 的容量策略）。
 
-##### Master 初始化源码解析见：
+##### Master 初始化源码解析：
 
 * [Master 初始化入口]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/init_master.md#master-%E5%88%9D%E5%A7%8B%E5%8C%96](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/init_master.md#master-初始化))
 * [Master 收集meta_tablet信息](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/restore_ts.md)
@@ -145,7 +147,7 @@ Master 初始化的目的是加载元数据 并 开启一些任务模块保证�
 
 1. HeratBeat：周期10s，一定等前一轮心跳结束才会进行下一轮，有同步机制。
 2. GC
-   1. TabletNodeGc：周期60s。
+   1. TabletNodeGc：周期60s，一定等前一轮心跳结束才会进行下一轮，有同步机制。
    2. CleanTrackableGcTrash：周期3600s。
 3. Load Balance：心跳探测完成。
 4. AbnormalNodeMgr：周期60s，尝试重新加入节点。
@@ -170,19 +172,115 @@ Master 初始化的目的是加载元数据 并 开启一些任务模块保证�
    10. 返回的 Tablet 的addr，与 Master 内存中的不符合，则跳过。
    11. 返回的 Tablet 的 Table 被 Disable，则跳过。
    12. 通过上述校验之后，更新 Tablet 的 update_time_、data_size_on_flash_、[Counter](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablet)、CompactStatus。
-5. 上述
-
-##### Load Balance
+5. 第四步中更新了 Tablet 的元数据，下面看一下 TabletNode 元数据的更新：
+   1. 遍历 Master 内存中 TabletNode 所有的 Tablet。
+   2. 如果 Tablet 的 UpdateTime 不等于 query_callback_start，说明这次心跳上报时没有这个 Tablet：
+      1. 如果 TabletStatus == UnloadFail 且 不是 safeMode状态，则 move tablet。
+      2. 如果 TabletStatus == Ready 且 Tablet 的 ReadyTime + 心跳周期 < start_query_time_，说明 Tablet 就是没有被汇报上来，则 move tablet。
+   3. 如果 TabletStatus == kTabletReady 或者 kTabletLoading 或者 kTabletOffline，都是正常状态 其大小、qps 都需要累加到当前的 TabletNode 上。
+6.   如果 Query 请求中带有 is_gc_query 参数，返回的结果中会带有每个 Tablet 正在使用的 sst 文件列表，Master 会记录这些文件，并对比之前的变更，对于不用的 sst 文件会在内存中维护，便于GC阶段回收。
+7. 完成了 核心的元数据  （TabletNode、Tablet）更新，此时开始 ScheduleLoadBalance（后面详细介绍）。
+8. 执行 DoTabletNodeGcPhase2 清理 Trash 目录（GC 部分会详细介绍）。
 
 
 
 ##### Garbage Collection
 
+Tera 系统的 GC 严格来说分位3部分，两部分由 Master 完成，一部分由 TabletNode 完成。TabletNode 的GC 实质上是 LevelDB 的 Compact，Tera 对 LevelDB 的 Compact 进行了定制化，对于删除操作（列簇、列、行、保留固定的版本数等情况）都是标记删除，在  Compact 过程中进行删除，这部分在 TabletNode 部分进行详细介绍。下面看一下 Master 的 GC 逻辑。
+
+###### DoTabletNodeGc
+
+1. 遍历 Master 内存中所有的 Table，收集 dead_tablets（内存中的 Tablet 与 DFS相应目录的 Tablet进行对比，DFS 上有的，内存中没有的，定义为 dead_tablet）。
+2. 遍历 dead_tablets，收集其 DFS 目录上相应的 sst 文件 或者其目录（如果sst文件为空），在内存中保存等待下一阶段的处理。
+
+线面等着心跳结束开启 DoTabletNodeGcPhase2 部分的工作：
+
+1. 将要删除的文件 move 到 trackable_gc_trash 目录（心跳中，已经对比过 Master 内存数据 与 TabletNode 上报的sst文件情况，将不再使用的sst文件，统一管理起来了，与第一阶段统一管理）。
+2. 清理 trackable_gc_trash 目录中的文件。
+
+**注意** ：前两个阶段分别对 Table 级别不用的 tablet 和 Tablet 级别不用的 sst 文件都进行了收集，并且放入 trackable_gc_trash目录，同时有同步机制保证这两个阶段的收集和移动一定是一轮一轮进行的保证串行。
 
 
-##### Abnormal Node
+
+###### DoGcTrashClean
+
+1. 检查 trash （创建表之前会将之前同名的表目录移动到该目录）目录，里面的文件或者目录是否超过 24小时（可配置），如果超时，则删除。
+2. 默认 1小时执行1次。
 
 
+
+##### Load Balance
+
+负载均衡实在一轮心跳探测之后进行的，先进行按容量进行负均衡，然后再按流量进行负载均衡（按流量负载均衡支持表级别的负载均衡，需要配置），每一次（一次容量负载均衡 + 一次流量负载均衡）负载均衡最多搬迁 50 个 Tablet（可配置），每种负载均衡可以指定搬迁的轮次，容量负载均衡只进行一轮，流量负载均衡是三轮，流量会直接影响用户的请求，所以频率自然高一些，容量可以慢慢进行。
+
+###### 容量负载均衡
+
+1. 判断是否需要进行容量负载均衡（策略再此处的判断是永远需要，）。
+2. 根据容量对所有的 TabletNode 进行排序，选取第一个节点作为源节点，如果相等比较addr，取较大的一个。
+3. 进行搬迁（后面介绍）。
+4. 容量负载均衡只进行一轮。
+
+
+
+###### 流量负载均衡
+
+1. 判断是否需要进行流量负载均衡，如果节点的pending_qps（读 + 写 + scan * 300）超过闸值（10亿），标记为pending_node，当pending_node比例超过10%（认为此事 dfs io会成为读的瓶颈），则认为需要进行负载均衡。
+2. 对节点进行排序，先比较 read_pending，再比较 row_read_delay（cell），最后比较 table级别的qps（table_name 为空时，qps 为0）。
+3. 选取第一个节点作为源节点，如果相等比较addr，取较大的一个。
+4. 进行搬迁（后面介绍）。
+5. 流量负载均衡只进行三轮（可以按 Table 级别进行，也可以按 TabletNode 级别进行，Table级别会遍历遍历所有的 Table 逐个进行）。
+
+
+
+###### 搬迁过程
+
+遍历源节点上所有的 Tablets：
+
+1. 选取 Tablet 的备选集：
+   1. 非 kTabletReady 状态 或者 MetaTable，则跳过。
+   2. 先判断是否要 spilt 或者 merge tablets：
+      1. Tablet 大小超过 split_size，则进行分裂。
+         1. split_size 默认 521MB，可在 schema 中指定。
+         2. 如果 Tablet 的写负载超过闸值（9999）且 大小超过规定最小值（64MB），split_size = max（64MB，size * ratio），ratio 默认 0.5。
+      2. Tablet 小于超过 merge_size，则进行分裂。
+         1. merge_size默认 0 MB，可在 schema 中指定。
+         2. 如果 Tablet 创建时间超过7天，merge_size = min（split_size，16G）。
+   3. 如果有 Tablet 正在 spilt，则不进行负载均衡的搬迁，直接返回。
+   4. 如果 Tablet 处于 Ready 状态，则加入备选集。
+2. 判断源节点是否达到搬迁的标准：
+   1. 容量策略：table在该节点上的容量是否超过闸值（默认是0）。
+   2. 流量策略：tabletnode 的 pending_qps（读 + 写 + scan * 300）是否超过闸值（10亿），并且table的qps是否大于0。
+3. 获取目的节点，遍历 Master 内存中所有的节点：
+   1. 节点必须是Ready。
+   2. 如果设置了 MetaTable 是隔离部署，则跳过该节点，
+   3. 容量得够用。
+   4. 不能正在进行 load tablets，不能正在有节点在 move in。
+   5. 节点的 read_pending_ 小于 100，将节点加入备选集，否则加入慢备选集，只有当备选集为空时，才使用慢备选集。
+   6. 在备选集中选择目标节点：
+      1. 容量策略：table在该节点上的容量排序。
+      2. 流量策略：比较顺序tabletnode 的 read_pending、row_read_delay、table的qps（table为空，qps为0）。
+4. 选取搬迁的 Tablet：
+   1. 容量策略：源节点最多向目标节点搬迁自身10%容量的数据，选择tablet容量最大的，但是不能超过上述条件的tablet。
+   2. 流量策略：tablet 的 read_rows + write_rows + scan_rows最大的tablet。
+5. 进行搬迁（move 逻辑后续介绍）。
+
+
+
+##### Abnormal
+
+
+
+
+
+##### Master 周期任务源码解析
+
+[Master HeartBeat](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/hb_master.md)
+
+[Master GC](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/gc_master.md)
+
+[Master LoadBalance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/lb_master.md)
+
+[节点防抖动](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/other/abnormal_ts.md)
 
 
 

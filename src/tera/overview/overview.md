@@ -140,7 +140,7 @@ MetaTable 是系统默认创建的用于存储全局的元数据，MetaTable 不
 
 1. KV 结构，而非表结构。
 2. 只有一个Tablet，既MetaTablet。
-3. 不可以进行合并 与 分裂，在所有的流程中（Tablet 加载、搬迁等）都会优先被处理。
+3. 不可以进行合并 、 分裂、因负载均衡而搬迁，并且在所有的流程中（Tablet 加载、搬迁等）都会优先被处理。
 4. MetaTable 可以设置 与其他表在物理上进行隔离，既单独的 TN 只负责MetaTable。
 5. MetaTable 在DFS上的目录与普通的Table 也是不一样的（后面介绍）。
 6. MetaTablet  初始化 或者异常情况下，会根据Load Balance 中容量的策略（Master部分介绍）选取一个TN 进行加载。
