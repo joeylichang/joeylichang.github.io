@@ -358,6 +358,14 @@ Kick 的节点并没有对上面的 Tablet 进行搬迁，可以理解为一种�
 
 
 
+##### 源码解析
+
+* [Master Add TabletNode](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/tablet_node/add_ts.md)
+* [Master Delete TabletNode](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/tablet_node/del_ts.md)
+* [Master KickOff TabletNode](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/tablet_node/kick_ts.md)
+
+
+
 ### Tablet In Master
 
 ##### Tablet State machine
