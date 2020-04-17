@@ -1,4 +1,4 @@
-# Master Delete TabletNode
+# Master KickOff TabletNode
 
 ### kick 节点的含义
 
