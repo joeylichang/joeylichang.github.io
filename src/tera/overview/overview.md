@@ -14,7 +14,7 @@
 
 Tera是百度开源的Table存储系统，主要用于网页和链接的存储，在链接选取、爬虫抓取、单网页计算、多网页计算、索引建库等整个搜索流程中起到非常重要的作用，在实时性 和 性能上与前一代MR + HDFS的架构有了较大提升。系统架构图如下所示：
 
-<img src="../../../images/tera_arch.png" alt="../../../images/tera_arch.png" style="zoom:10%;" />
+<img src="../../../images/tera_arch.png" alt="../../../images/tera_arch.png" style="zoom:30%;" />
 
 Tera 的设计思路大部分借鉴了Google BigTable的设计思想，系统主要分为两层，底层数据的持久化基于BFS（百度内部的文件系统，内部已经用新一代的自研AFS替换了BFS）同时兼容HDFS，上层是基于分布式文件系统（例如HDFS）实现的Table存储。
 

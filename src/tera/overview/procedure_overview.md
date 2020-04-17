@@ -15,11 +15,11 @@
     * [update(write/delete)](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#updatewritedelete)
     * [read](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#read)
     * [scan](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#scan)
-    * [compact](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#compact)
     * [transaction](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#transaction)
       * [single row transaction](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#single-row-transaction)
       * [global transaction](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/procedure_overview.md#global-transaction)
       
+
 ### Table procedure
 
 #### create table
@@ -51,8 +51,6 @@
 #### read
 
 #### scan
-
-#### compact
 
 #### transaction
 

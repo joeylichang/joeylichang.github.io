@@ -215,7 +215,7 @@ Tera 系统的 GC 严格来说分位3部分，两部分由 Master 完成，一�
 
 ###### 容量负载均衡
 
-1. 判断是否需要进行容量负载均衡（策略再此处的判断是永远需要，）。
+1. 判断是否需要进行容量负载均衡（策略再此处的判断是永远需要）。
 2. 根据容量对所有的 TabletNode 进行排序，选取第一个节点作为源节点，如果相等比较addr，取较大的一个。
 3. 进行搬迁（后面介绍）。
 4. 容量负载均衡只进行一轮。
@@ -268,7 +268,15 @@ Tera 系统的 GC 严格来说分位3部分，两部分由 Master 完成，一�
 
 ##### Abnormal
 
+Abnormal 的作用是防止同一个节点频繁的加入离开引起集群不稳定（主要是防止网络抖动）。其主要思想，如下：
 
+1. 节点删除时，将节点信息放入 Abnormal 中缓存。
+   1. Abnormal 中会统计节点删除的时间序列（最近3次），进而判断节点是否是频繁的被删除 （10min 内 3次）。
+   2. 如果被判定删除过于频繁，则设定一个 recovery_wait_time （10 min ~ 24h）。
+2. 节点加入时，先判断节点是否是 Abnormal 节点（既是否被盘点是否频繁加入）。
+   1. 如果不是的话，节点正常加入。
+   2. 如果是的话，会将节点加入延迟加入队列。
+3. 周期性（60s）去延迟队列扫描可以加入的节点（等待时间超过 recovery_wait_time），加入集群。
 
 
 
@@ -280,17 +288,110 @@ Tera 系统的 GC 严格来说分位3部分，两部分由 Master 完成，一�
 
 [Master LoadBalance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/lb_master.md)
 
-[节点防抖动](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/other/abnormal_ts.md)
+[节点防抖动（Abnormal）](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/other/abnormal_ts.md)
+
+### TabletNode In Master
+
+##### TabletNode State machine
+
+![tera_tabke_node_state](../../../images/tera_tabke_node_state.png)
+
+##### TabletNode Add
+
+节点加入来源两个地方：
+
+1. Watch 到 ZK 目录 /tera/ts 子节点的变更，发现有节点加入。
+2. 周期性从 Abnormal 队列取节点进行加入。
+
+节点加入的步骤：
+
+1. 判断节点是否是 IsAbnormalNode，如果是表名节点频繁的加入离开，需要隔离一段时间让后从Abnormal 队列取出再加入，直接返回。
+
+2. 向 TabletNodeManager 中添加节点，此时内存中的节点（如果没有，则创建 TabletNode 对象），此时节点状态从初始化的 OffLine 转换到 Ready。
+
+3. 更新 [TabletNode 的内存数据](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablenodes)。
+
+4. 此时，需要处理一下 MetaTable，如果没有加载需要加载他。
+
+   **注意** ：如果集群是新集群，还没有 TabletNode 不会走之前介绍的 Restore 逻辑，如果当前节点是第一个加入的节点，那么就应该先加载 MetaTable。
+
+5. 在 TabletNodeManager 查看当前节点是否在 ReconnectTask 队列中，说明之前心跳有问题，此时应该讲任务（搬迁上面的 Tablet 任务）取消。
+
+6. 最后，查看 Master 内存中该节点负责的 Tablet ，如果有 kTabletDelayOffline 和 kTabletOffline 状态的进行 load。
+
+
+
+##### TabletNode Delete
+
+节点删除的原因只有一个：Watch 到 ZK 目录 /tera/ts 子节点的变更，经过与内存对比发现节点被删除。
+
+节点删除步骤：
+
+1. 将节点加入 Abnormal ，判断其时候在最近的时间段频繁加入离开，是的话会设置一个隔离期。
+2. 判断 Master 是否是 kOnWait（表示等待 TabletNode 加入），是的话直接返回。
+3. 判断集群现在是否在 SafeMode 模式，如果在的话，对其上的 Tablet 执行 kTsDelayOffline，否则执行 kTsOffline（Tablet 状态转换见下面）。
+4. 对其上的 Tablet 进行搬迁，将搬迁任务的 <ID，node_uuid> 存入 TabletNodeManager，如果节点在任务执行完之前重新加入，则应 Cancle 该任务。
+
+
+
+##### TabletNode KickOff
+
+Kick状态的节点，其实是一种异常状态，节点在zk注册的节点还在，还不能进行删除。但是Master与节点进行交互，比如unload_tablet、加载meta_tablet、心跳超过重试次数仍未返回结果（10次）、初始化收集节点信息超过重试次数（10次）仍未返回信息时，节点被kick。
+
+Kick 的节点并没有对上面的 Tablet 进行搬迁，可以理解为一种不确定是否节点故障的状态（确定的唯一方法是 ZK 上节点注册的临时节点被删除）。内存的节点被 kick 之后永远都处于 kKicked 状态，直到节点重新在ZK 上注册新的临时节点。如果节点正常，当 Watch ZK 的 /tera/kick 目录先有自己相关的节点时，会去删除他，但是不会重连，此时节点在 Master 中仍是 kKickd 状态。
+
+具体步骤：
+
+1. 判断节点是否处于 kKicked 状态。
+2. 集群是否处于 SafeMode 状态。
+3. 节点状态转换为 kWaitKick 状态。
+4. 判断节点目前 Tablet 的故障率是否达到 SafeMode 标准，达到则返回 kReady 状态。
+5. 如果仍然不触发 SafeMode 状态，则进入 kKicked 状态。
+
+
+
+### Tablet In Master
+
+##### Tablet State machine
+
+![tera_tablet_state_change](../../../images/tera_tablet_state_change.png)
+
+ Tablet 状态在整个系统中是最多的，值得注意的是，上述状态都是 Master 内存中维护的 Tablet 状态，既不会持久化到 MetaTable。MetaTable 中持久化的状态只有一个，既 Offline 状态，这也是为什么 Master 重启之后会收集一遍集群的信息（TabletNode 和 Tablet 两部分信息）来恢复内存中的元数据。笔者认为这是一种复杂度 与 效率之间 权衡的结果，如果所有的状态都持久化 MetaTable 实现复杂度会很高（要考虑各种状态持久化的异常情况，且恢复过程的子阶段应该是可重复或者说是幂等的，复杂福极高），MetaTable 只持久化 Offline 状态，然后根据 TabletNode 上报的 Tablet 状态在进行处理，简化了上述的复杂度。带来的问题是，如果集群规模较大，Master 重启恢复元数据的时间会有一定的延迟，这期间集群的可用性会有一定的损失。
+
+上面提到了收集 TabletNode 中维护的 Tablet 状态，然后根据这个状态进行处理，所以还需要知道 TabletNode 有哪些 Tablet 的状态，以及什么处理逻辑（在 Master Init 部分有介绍）。TabletNode 内部会维护Tablet 的状态分位一下几种：
+
+1. kTableDisable，加入 disabled_tables 集合带统一处理。
+2. kTabletUnloading || kTabletUnloading2，则进行move。
+3. kTabletReady，则更新内存中 Tablet 的状态为kTabletReady。
+4. kTabletNotInit、kTabletOnLoad，重新加载。
+
+既，Master 上述诸多状态进行转换时，对 TabletNode 进行操作，映射到 TableNode 中只有上述 5中状态。提供了一种复杂状态简化处理的思路。
 
 
 
 ### Procedure Arch
 
-### Tabletnode State Machine
+Master对CreateTable、分裂、合并、迁移等12种操作进行了抽象，使用同一的架构进行处理，本部分对抽象的通用架构进行分析。Procedure的类图，如下图所示：
 
-### Disaster Desgin
+<img src="../../../images/tera_master_producre_arch.png" alt="tera_master_producre_arch" style="zoom:30%;" />
+
+详情见[Master 通用流程处理架构]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/overview.md#master-%E9%80%9A%E7%94%A8%E6%B5%81%E7%A8%8B%E5%A4%84%E7%90%86%E6%9E%B6%E6%9E%84](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/overview.md#master-通用流程处理架构))，结论是，从用户角度看，可以将流程处理看做是一个协程每一段子任务执行完毕后，调用 RunNextStage 下一个子任务。两个流程中的子任务可以使用同步机制进行同步。有了这部分知识储备方便我们后面介绍图中的12中流程处理逻辑。
+
+
 
 ### AccessControl
 
+百度内部使用自研的 Giano 权限系统，处于开源的安全性考虑这部分被阉割掉了，系统提供了一个简化版的权限管理，模型如下：
+
+1. user_name -> group 多对一
+2. user_name -> role  一对多
+3. role -> permission 一对多
+4. Permission ：
+   1. global ：读、写、admin
+   2. namespace ：namespace_name、（读、写、admin）
+   3. table ：namespace_name、table_name、cf、qua、（读、写、admin）
+
 ### Quta
+
+### Disaster Desgin
 
