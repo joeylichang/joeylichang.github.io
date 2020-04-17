@@ -1,5 +1,7 @@
 * **Navigation**
   * [Master Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-arch)
+   * [Mater Class arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#mater-class-arch)
+   * [Master Thread arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-thread-arch)
   * [Master State Machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-state-machine)
   * [Master Init](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-init)
   * [Master Period Task](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#master-period-task)
@@ -7,11 +9,17 @@
     * [Garbage Collection](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#garbage-collection)
     * [Load Balance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#load-balance)
     * [Abnormal](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#abnormal)
+  * [TabletNode In Master](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-in-master)
+   * [TabletNode State machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-state-machine)
+   * [TabletNode Add](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-add)
+   * [TabletNode Delete](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-delete)
+   * [TabletNode KickOff](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-kickoff)
+  * [Tablet In Master](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tablet-in-master)
+   * [Tablet State machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tablet-state-machine)
   * [Procedure Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#procedure-arch)
-  * [Tabletnode State Machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-state-machine)
-  * [Disaster Desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#disaster-desgin)
   * [AccessControl](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#access-control)
   * [Quta](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#quta)
+  * [Disaster Desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#disaster-desgin)
 
 ### Master Arch
 
