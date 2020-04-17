@@ -142,9 +142,9 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
 
 ##### Master 初始化源码解析：
 
-* [Master 初始化入口](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/init_master.md#master-初始化))
+* [Master 初始化入口](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/init_master.md#master-初始化)
 * [Master 收集meta_tablet信息](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/restore_ts.md)
-* [Master 加载MeatTablet数据](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/restore_tablet.md#master-加载meattablet数据))
+* [Master 加载MeatTablet数据](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/restore_tablet.md#master-加载meattablet数据)
 * [Master 加载UserTablet信息](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/restore_user_tablet.md)
 
 
