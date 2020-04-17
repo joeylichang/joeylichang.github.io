@@ -107,7 +107,7 @@ Master 抢锁成功之后，如果没有 TabletNode（新集群未加入机器�
          3. key 的首字符 == '|' 且 第二个字符是 '1'，表示是 Quta 信息。
          4. key 的首字符 == '@'，表示是 Table 信息，LoadTableMeta。
          5. key 的首字符 > '@'，既table_name + ‘#’ + key_start，表示是 Tablet 信息LoadTabletMeta。
-      3. Table 以及 Tablet 在Master 内存中的元数据信息详见[Tablet元数据解析](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablet)
+      3. [Table 以及 Tablet 在Master 内存中的元数据信息详见[Tablet元数据解析](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/data_organ/meta_data.md#tablet)
 
 3. 加载 UserTable 的信息，根据收集上来的 Tablets 信息，对用户的 Tablets 进行处理。
 
@@ -290,13 +290,13 @@ Abnormal 的作用是防止同一个节点频繁的加入离开引起集群不�
 
 ##### Master 周期任务源码解析
 
-[Master HeartBeat](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/hb_master.md)
+* [Master HeartBeat](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/hb_master.md)
 
-[Master GC](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/gc_master.md)
+* [Master GC](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/gc_master.md)
 
-[Master LoadBalance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/lb_master.md)
+* [Master LoadBalance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/init/lb_master.md)
 
-[节点防抖动（Abnormal）](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/other/abnormal_ts.md)
+* [节点防抖动（Abnormal）](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/other/abnormal_ts.md)
 
 ### TabletNode In Master
 
