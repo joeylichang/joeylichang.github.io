@@ -9,7 +9,7 @@ RemoteTabletNode负责TabletNode RPC的远程调用逻辑。先看一下其重�
 ```c++
 TabletNodeImpl* tabletnode_impl_;     // rpc层做一些校验限流逻辑之后会调用其相应接口完成操作
 scoped_ptr<ThreadPool> ctrl_thread_pool_;  // loadtablet、unloadtablet 在任务较多是使用这个线程池，默认20个线程
-scoped_ptr<ThreadPool> lightweight_ctrl_thread_pool_;  // loadtablet、unloadtablet 任务不重 或者 query、CmdCtrl、computespilt、updat使用的线程池 默认 10个线程
+scoped_ptr<ThreadPool> lightweight_ctrl_thread_pool_;  // loadtablet、unloadtablet 任务不重 或者 query、CmdCtrl、computespilt、update 使用的线程池 默认 10个线程
 scoped_ptr<ThreadPool> write_thread_pool_;  // 写请求的线程池 默认10个线程
 scoped_ptr<ThreadPool> read_thread_pool_;   // 读请求的线程池 默认40个线程
 scoped_ptr<ThreadPool> scan_thread_pool_;   // scan请求的线程池 默认30个线程

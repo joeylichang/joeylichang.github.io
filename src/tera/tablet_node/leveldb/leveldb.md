@@ -4,7 +4,7 @@ Tera 对leveldb 进行了大量的优化，主要包括一下几部分：
 
 1. 增加DBTable类继承DB，DBTable是对tablet的抽象，DBTable内部封装了DBImpl，DBImpl对lg进行抽象。
 2. 增加PersistentCache，相对于DFS利用本地SSD磁盘的缓存。
-3. 对ENV进行继承，支持多套环境，包括HDFS、NFS（百度自研）、Local等（本系列关注HDFS）。
+3. 对ENV进行继承，支持多套环境，包括HDFS、AFS（百度自研）、Local等（本系列关注HDFS）。
 4. 支持多线程Compact。
 5. 其他，包括TableCache、MemTableOnLevelDB等。
 
@@ -32,7 +32,7 @@ Tera由于支持DFS，所以对env进行了扩展支持多种系统环境，在�
 一个leveldb引擎的具体实现，一个DBImpl包含一个mutable（MemTable类型）、一个immutable（MemTable类型），和若干sst文件用于存储用户数据。
 
 ##### ShardedMemTable
-继承自MemTable（内存中的用户数据），用vectore组织的多个（默认配置4个）BaseMemTable 或者 MemTableOnLevelDB，循环vector往里add数据。
+继承自MemTable（内存中的用户数据），用vector组织的多个（默认配置4个）BaseMemTable 或者 MemTableOnLevelDB，循环vector往里add数据。
 
 ShardedMemTable分片的数量，默认值是4。如果是KV结构则，不使用ShardedMemTable，而是MemTableOnLevelDB或者BaseMemTable，配置是0。KV需要Get接口，其他接口时通过迭代器获取（因为ShardedMemTable组装了多个TableCache）数据。所以ShardedMemTable，不支持Get。MemTableOnLevelDB 和 BaseMemTable 支持Get接口。
 
@@ -58,9 +58,10 @@ Tera-LevelDB的数据存储分布如上图所示。内存中除了mutable 和 im
 存储的是 key->db_name+file_name，value->sst的索引数据。读取时从里面读，不再的时候会从dfs读出来写入。level0 落盘时，会写入。
 
 ##### BlockCache
+
 存储的是用户数据。读取时从里面读数据，不再的话会从DFS中读数据写入。level0 落盘时，会写入。
 
-##### PersistentCache 
+##### PersistentCache
 
 详见[PersistentCache](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/leveldb/persistent_cache.md)
 
@@ -88,7 +89,7 @@ Tera-LevelDB的数据存储分布如上图所示。内存中除了mutable 和 im
 
 #####  写入
 
-batch写入，会把千秋分配到不同的lg上进行。日志log写dfs，数据写内存。
+batch写入，会把请求分配到不同的lg上进行。日志log写dfs，数据写内存。
 
 ##### 压缩
 
