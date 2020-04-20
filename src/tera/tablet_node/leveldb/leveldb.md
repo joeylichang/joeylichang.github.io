@@ -1,4 +1,4 @@
-# TabletNode中的Level
+# TabletNode中的LevelDB
 
 Tera 对leveldb 进行了大量的优化，主要包括一下几部分：
 
