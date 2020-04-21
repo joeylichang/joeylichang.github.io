@@ -38,6 +38,8 @@
 
 #### unload tablet
 
+主要两阶段关闭
+
 #### move tablet
 
 #### spilt tablet

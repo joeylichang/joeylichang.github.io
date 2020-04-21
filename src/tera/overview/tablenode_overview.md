@@ -1,4 +1,5 @@
 * **Navigation**
+  
   * [TabletNode Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/tablenode_overview.md#tabletnode-arch)
     * [TableNode Class Arch]()
     * [TableNode Thread Arch]()
@@ -136,31 +137,202 @@ Tera 对 LevelDB 有了较大的改动，也增加了一些配置，在对LevelD
 
 ### TabletNode RPC Arch
 
+在 RPC 回调层，TabletNode 针对 Read、Scan、Quta 三类请求做了一层调度模块。类架构图如下所示：
 
+<img src="../../../images/tera_tn_rpc_arch.png" alt="tera_tn_rpc_arch" style="zoom:50%;" />
 
+RpcSchedule 内部维护 表名 -> 调度单元的映射（既std::map<TableName, ScheduleEntity*> TableList），调度单元（ScheduleEntity）内部有有一个队列（既TaskQueue）记录RPC任务（既RpcTask），详情见[RPC的调度策略](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/rpc/tn_rpc.md)。
 
+RpcSchedule 维护三个重要接口EnqueueRpc、DequeueRpc、FinishRpc。
 
-### Load Tablet
+1. EnqueueRpc：通过tablename 获取调度单元，再获取对应的队列，将RpcTask加入队列。如果TaskQueue的pending_count不为0，则调用FairSchedulePolicy的Enable的接口，将调度单元设置为可调度。
 
+2. DequeueRpc：调用FairSchedulePolicy的pick接口获取要执行的RpcTask。Pick的策略是遍历std::map<TableName, ScheduleEntity*> TableList，判断当前调度单元（ScheduleEntity）是否是enable，如果是取出队列，从头部取出一个RpcTask去执行。如果调度单元的pending_count为0，则调用FairSchedulePolicy的Disable接口将调度单元（ScheduleEntity）设置为不可调度
 
+   ##### 注意：如果一个table积压的任务较多，其他table的任务可能长时间等待，因超时饿死。
 
-
-
-### UnLoad Tablet
-
-主要两阶段关闭
+3. FinishRpc：调用FairSchedulePolicy的Done的接口，更新调度单元（ScheduleEntity）的统计数据。
 
 
 
 ### Statistic
 
+TabletNode 中分层对一些数据进行统计，这些统计数据有的会打印到日志、有的会定期Dump到文件，用于监控，帮助排查问题、监控指标。还有的统计数据会通过心跳上报给 Master，供 Master 做系统整体协调的依据。故，有必要对了解其统计信息的含义。
 
+##### RemoteTabletNode 层
 
-### Query（HeartBeat Response）
+主要是统计 RPC 接收到请求 QPS、因异常拒绝的请求 QPS、分位统计等，详情见[RemoteTabletNode 层统计数据]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#remotetabletnode-%E5%B1%82%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#remotetabletnode-层统计数据))。
+
+##### TabletNodeImpl 层
+
+主要是统计因 TabletNode 层校验失败的请求 QPS、TableCache（LevelDB）、BlockCache（LevelDB）缓存统计数据（命中率等）、压缩比等，详情见[TabletNodeImpl 层统计数据]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletnodeimpl-%E5%B1%82%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletnodeimpl-层统计数据))。
+
+##### TabletIO 层
+
+主要统计 LevelDB 层，读、写、SCAN 的行数、cell数等QPS。其中 StatCounter 内部的统计数据会通过心跳上报给 Master，作为 Load Banalce 的重要数据依赖，详情见[TabletIO 层统计数据]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletio-%E5%B1%82%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletio-层统计数据))。
+
+##### TabletWriter 层
+
+主要是统计写入 LevelDB 的耗时情况，详情见[TabletWriter 层统计数据]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletwriter-%E5%B1%82%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#tabletwriter-层统计数据))
+
+##### PersistentCache 层
+
+主要是统计 PersistentCache 的带宽、写入QPS、命中率等，详情见[PersistentCache 层统计数据]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#persistentcache-%E5%B1%82%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/statistic/tn_statistic.md#persistentcache-层统计数据))。
 
 
 
 ### TabletNode Period Task
+
+TabletNode 周期性任务分为一下几种：
+
+1. GC：主要是PersistentCache的GC，默认配置是30min执行一次。
+2. 统计信息刷新，默认1s更新一次。
+3. SysInfo信息刷洗，默认1s更新一次。
+4. RPC回调层，线程池、任务等信息profile，默认1s更新一次。
+5. RPC最大延迟信息输出，默认1s更新一次。
+
+源码解析见，[TabletNode 周期任务](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/init/tn_period.md)。
+
+
+
+### Query（HeartBeat Response）
+
+Query 请求是 Master 周期性（默认10s）向所有 TabletNode 发送的探测请求，其返回结果中包含当前 TabletNode 的信息，详细的源码解析见[TableNodeServer Query](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_query.md)。
+
+本部分主要看一下，Query 请求的 Response 主要包含哪些信息 以及 含义：
+
+###### QueryResponse
+
+```protobuf
+message QueryResponse {
+    required uint64 sequence_id = 1;
+    required StatusCode status = 2;
+    optional TabletNodeInfo tabletnode_info = 3;
+    optional TabletMetaList tabletmeta_list = 4;
+    repeated InheritedLiveFiles inh_live_files = 5; 	// 兼容旧版本，不在此介绍
+    repeated TabletInheritedFileInfo tablet_inh_file_infos = 6;
+    repeated TabletBackgroundErrorInfo tablet_background_errors = 7;
+    optional uint64 version = 8;
+    optional uint64 quota_version = 10;
+}
+```
+
+
+
+###### QueryResponse.TabletNodeInfo
+
+```protobuf
+message TabletNodeInfo {
+  required string addr = 1;
+  optional StatusCode status_t = 2;
+  optional uint64 load = 3;
+  optional uint64 timestamp = 4;
+  optional uint32 tablet_total = 5;
+  optional uint32 tablet_onbusy = 6;
+  optional uint32 tablet_corruption = 7;
+
+  optional uint32 low_read_cell = 11;
+  optional uint32 scan_rows = 12;
+  optional uint32 scan_kvs = 13;
+  optional uint32 scan_size = 14;
+  optional uint32 read_rows = 15;
+  optional uint32 read_kvs = 16;
+  optional uint32 read_size = 17;
+  optional uint32 write_rows = 18;
+  optional uint32 write_kvs = 19;
+  optional uint32 write_size = 20;
+
+  optional uint64 mem_used = 21;
+  optional uint32 net_tx = 22;
+  optional uint32 net_rx = 23;
+  optional uint32 dfs_io_r = 24 [default = 0];
+  optional uint32 dfs_io_w = 25 [default = 0];
+  optional uint32 local_io_r = 26;
+  optional uint32 local_io_w = 27;
+  optional uint32 dfs_master_qps = 28 [default = 0]; // Operations through dfs's master, including close, open, delete
+
+  optional string status_m = 31;
+  optional uint32 tablet_onload = 32;
+  optional uint32 tablet_onsplit = 33;
+  optional uint32 tablet_unloading = 34;
+
+  repeated ExtraTsInfo extra_info = 40;
+
+  optional uint32 read_pending = 41;
+  optional uint32 write_pending = 42;
+  optional uint32 scan_pending = 43;
+
+  optional float cpu_usage = 44;
+  optional int64 process_start_time = 45;  // Unix time in us
+
+  optional uint64 persistent_cache_size = 46;
+}
+```
+
+
+
+###### QueryResponse.TabletMetaList
+
+```protobuf
+message TabletMetaList {
+  repeated TabletMeta meta = 1;
+  repeated TabletCounter counter = 2;
+  repeated int64 timestamp = 3;  // meta update timestamp
+}
+
+// 在上一部分 Statistic 部分有介绍
+message TabletCounter {
+  optional uint32 low_read_cell = 1;
+  optional uint32 scan_rows = 2;
+  optional uint32 scan_kvs = 3;
+  optional uint32 scan_size = 4;
+  optional uint32 read_rows = 5;
+  optional uint32 read_kvs = 6;
+  optional uint32 read_size = 7;
+  optional uint32 write_rows = 8;
+  optional uint32 write_kvs = 9;
+  optional uint32 write_size = 10;
+  optional double write_workload = 11 [default = 0.0];
+
+  optional bool is_on_busy = 15 [default = false];
+  optional TabletMeta.TabletStatus db_status = 16;
+}
+```
+
+
+
+###### QueryResponse.TabletInheritedFileInfo
+
+如果 Query 请求带有 gc 参数，会获取每一个 Tablet 正在使用的 SST 文件，并通过 TabletInheritedFileInfo 汇报给 Master。
+
+```protobuf
+message TabletInheritedFileInfo {
+  optional string table_name = 1;
+  optional bytes key_start = 2;
+  optional bytes key_end = 3;
+  repeated LgInheritedLiveFiles lg_inh_files = 4;
+}
+
+message LgInheritedLiveFiles {
+  required uint32 lg_no = 1;
+  repeated uint64 file_number = 2;  // full file number, include tablet number
+}
+```
+
+
+
+###### QueryResponse.TabletBackgroundErrorInfo
+
+这里的 BackgroundError 值得是 LevelDB 的 Compact 错误，通过 LevelDB 的 GetProperty 接口获取其 leveldb.compaction_error 的信息，并上报。
+
+```protobuf
+message TabletBackgroundErrorInfo {
+  required string tablet_name = 1;
+  required bytes detail_info = 2;
+}
+```
+
+
 
 
 

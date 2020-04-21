@@ -36,7 +36,7 @@ std::shared_ptr<quota::QuotaEntry> quota_entry_;   // quta模块
 
 ![tera_tn_rpc_arch](../../../../images/tera_tn_rpc_arch.png)
 
-TableServer 的读、Scan、Quta请求的调度策略都是相同的，类图及重要的类成员变量如上图所示。
+TableNodeServer 的读、Scan、Quta请求的调度策略都是相同的，类图及重要的类成员变量如上图所示。
 
 整个调度的策略，在RPC远程调用做一下队列的缓冲。
 
@@ -46,9 +46,9 @@ RpcSchedule 维护三个重要接口EnqueueRpc、DequeueRpc、FinishRpc。
 
 1. EnqueueRpc：通过tablename 获取调度单元，再获取对应的队列，将RpcTask加入队列。如果TaskQueue的pending_count不为0，则调用FairSchedulePolicy的Enable的接口，将调度单元设置为可调度。
 
-2. DequeueRpc：调用FairSchedulePolicy的pick接口获取要执行的RpcTask。Pick的策略是遍历std::map<TableName, ScheduleEntity*> TableList，判断当前调度单元（ScheduleEntity）是否是enable，如果是取出队列，从头部取出一个RpcTask区执行。如果调度单元的pending_count为0，则调用FairSchedulePolicy的Disable接口将调度单元（ScheduleEntity）设置为不可调度
+2. DequeueRpc：调用FairSchedulePolicy的pick接口获取要执行的RpcTask。Pick的策略是遍历std::map<TableName, ScheduleEntity*> TableList，判断当前调度单元（ScheduleEntity）是否是enable，如果是取出队列，从头部取出一个RpcTask去执行。如果调度单元的pending_count为0，则调用FairSchedulePolicy的Disable接口将调度单元（ScheduleEntity）设置为不可调度
 
-   ##### 注意：如果一个table积压的任务较多，其他table的任务可能长时间等地啊，因超时饿死。
+   ##### 注意：如果一个table积压的任务较多，其他table的任务可能长时间等待，因超时饿死。
 
 3. FinishRpc：调用FairSchedulePolicy的Done的接口，更新调度单元（ScheduleEntity）的统计数据。
 
