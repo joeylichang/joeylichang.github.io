@@ -60,7 +60,7 @@ TabletNodeImpl::CacheMetrics {
   block_cache_hitrate_ // leveldb block cache 缓存用户数据，用的ShardedLRUCache 详见leveldb介绍) 命中率，没秒计算一次
   block_cache_entries_ // leveldb block cache 缓存数据的个数，每秒统计一次
   block_cache_charge_  // leveldb block cache 缓存的使用量（使用的个数），每秒刷新一次
-  table_cache_hitrate_ // leveldb table cache 缓存索引，用的ShardedLRUCache 详见leveldb介绍) 命中率，没秒计算一次
+  table_cache_hitrate_ // leveldb table cache 缓存索引（用的ShardedLRUCache 详见leveldb介绍) 命中率，没秒计算一次
   table_cache_entries_ // leveldb table cache 缓存数据的个数，每秒统计一次
   table_cache_charge_  // leveldb table cache 缓存的使用量（使用的个数），每秒刷新一次
 }
