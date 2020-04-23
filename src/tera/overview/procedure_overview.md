@@ -344,7 +344,7 @@
   1. 在 TabletManager 中获取 TabletIO 内存数据。
   2. TabletIO Unload 逻辑：
      1. try_unload_count_++，用于判断是否处于 UrgentUnload 状态（闸值时 3次）。
-     2. 调用 LevelDB 的 Shutdown1 接口，内部遍历所有的 DPImpl（LG）进行，对内存中的数据进行 Flush，切换 MemTable 落盘到 Level 0，并处理 wal。
+     2. 调用 LevelDB 的 Shutdown1 接口，内部遍历所有的 DPImpl（LG）进行，对内存中的数据进行 Flush，并等待所有的压缩任务完成，切换 MemTable 落盘到 Level 0，并处理 wal。
      3. 然后等待 LevelDB 的引用计数为 1，因为 Shutdown1 期间还可能有数据写入，循环等待（周期100ms）。
      4. 停止 TabletIO 异步的写入（TabletNode 是批量写入 LevelDB，后面介绍），期间会将所有的写 Flush 到 LevelDB。
      5. 调用 LevelDB 的 Shutdown2 接口，Flush Shutdown1 阶段的写入数据。
@@ -458,22 +458,31 @@
 #### merge tablet
 
 * Master
-  1. UnLoadTablets
-  2. PostUnLoadTablets
-  3. UpdateMeta
-  4. LoadMergedTablet
-  5. FaultRecover
-  6. Eof
+  1. 合并的两个 Tablet 必须是 Ready 状态，并且 Key 连续。
+  2. UnLoadTablets
+     1. 创建两个 UnloadTabletProcedure，对其进行卸载。
+     2. 有同步机制保证，卸载完成才会往下进行。
+  3. PostUnLoadTablets
+     1. 校验两个 Tablet 是否卸载成功，主要是看 wal 是否都消费完毕（正常的卸载是一定会消费完毕的，通过两阶段完成，上面介绍过）。
+     2. 如果校验没有通过直接进入 FaultRecover，否则继续。
+  4. UpdateMeta
+     1. 异步更新合并之后的 Tablet 的元数据到 MetaTable（无限次重试，一定成功）。
+     2. 更新成功之后，修改内存元数据。
+  5. LoadMergedTablet：创建 LoadTabletProcedure 加载合并之后的 Tablet。
+  6. FaultRecover：重新加载两个源 Tablet。
+  7. Eof：结束 RPC 请求。
 
 
 
 ##### 注意
 
+1. 主要流程与 Spilt 流程相似。
 
+   
 
 ##### 源码解析
 
-
+[Master Merge Tablet 流程](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/tablet/merge_tablet_procedure.md)
 
 
 
@@ -481,17 +490,177 @@
 
 #### update(write/delete)
 
-schema 的校验？
+* Client
 
-##### 注意
+  1. 客户端支持请求的异步、同步、批量写等特性，其中重要的数据结构[RowMutationImpl](https://github.com/joeylichang/tera/blob/master/src/sdk/mutate_impl.cc)、[BatchMutationImpl](https://github.com/joeylichang/tera/blob/master/src/sdk/batch_mutation_impl.h)。
+
+  2. Tera 的更新支持以下几种（与之对应存储 LevelDB 的 Key 类型）：
+
+     ```c++
+     enum Type { 		      TeraKeyType
+                           TKT_FORSEEK, // seek使用的边界，例如 start_key、end_key
+     			kPut,			      TKT_VALUE          // 修改一个列
+     			kDeleteColumn, 	TKT_DEL_QUALIFIER  // 删除一个列的指定版本
+     			kDeleteColumns, TKT_DEL_QUALIFIERS // 删除一个列的指定范围版本
+     			kDeleteFamily, 	TKT_DEL_COLUMN     // 删除一个列族的所有列的指定范围版本
+     			kDeleteRow, 	  TKT_DEL            // 删除整行的指定范围版本
+     			kAdd, 			    TKT_ADD            // 原子加一个Cell
+     			kPutIfAbsent, 	TKT_PUT_IFABSENT   // 如果不存在才能Put成功
+     			kAppend, 		    TKT_APPEND         // 追加内容到一个Cell
+     			kAddInt64 		  TKT_ADDINT64       // 原子加一个Cell(int64类型)
+                           TKT_TYPE_NUM       // 类型的计数
+     };
+     
+     // TeraKey(RawKey) Encoding
+     /**
+      *  readable encoding format:
+      *  [rowkey\0|column\0|qualifier\0|type|timestamp]
+      *  [ rlen+1B| clen+1B| qlen+1B   | 1B | 7B      ]
+      **/
+     
+     /**
+      *  binary encoding format:
+      *  [rowkey|column\0|qualifier|type|timestamp|rlen|qlen]
+      *  [ rlen | clen+1B| qlen    | 1B |   7B    | 2B | 2B ]
+      **/
+     
+     /**
+      * support KV-pair with TTL, Key's format :
+      * [row_key|expire_timestamp]
+      * [rlen|8B]
+      **/
+     ```
+
+  3. Client 会缓存 MetaTable 的地址，然后从 MetaTable 回去要访问的 Tablet 地址（也会缓存）。
+
+  
+
+* TabletNode
+
+  1. TabletNode 在 TabletIO 层加了一个批量异步写入的逻辑（TabletWriter）。
+  2. TabletWriter 使用双 Buffer 机制，当Buffer 写满 或者 周期（默认10ms）切换 buffer 写入 LevelDB，等备份 buffer 都写入 LevelDB 之后再统一返回 RPC。
+  3. LevelDB 层的写入会先获取一个 Sanpshot，然后写入，写入成功之后释放 Sanpshot。
+
+  **注意**：
+
+  1. TabletWriter 可以设置是否批量写入，批量写入时用延迟换吞吐（平均延时增加 5ms，但是吞吐提上了），如果对延时要求较高可以不适用批量写入，但是吞吐会下降（与 DFS 之间有网络延时）。
+  2. LevelDB 层的写入引入了 Sanpshot 目的是不影响正常的读操作。
+  3. 写入时是行级别的原子操作，因为 Tablet 是水平切分，每个写操作可能跨 LG（LevelDB 实例），但是写入时所涉及的行都在一个进程内，且使用了 Snapshot 机制保证不会读到残行。
+
+##### 源码解析
+
+[TN Write Tablet](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_write_tablet.md)
+
+[LevelDb Write](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/tablenode_overview.md#write)
+
+
 
 #### read
 
-##### 注意
+* Client
+
+  1. 客户端支持请求的异步、同步、批量写等特性，其中重要的数据结构，[RowReaderImpl](https://github.com/joeylichang/tera/blob/master/src/sdk/read_impl.h)。
+
+* TabletNode
+
+  分三种情况处理：
+
+  1. kv读：调用leveldb Get接口。
+
+  2. 指定col qua条件的读，调用LowLevelSeek，通过迭代器对读到的数据进行过滤。
+
+  3. 未指定col qua条件，既读一整行，调用LowLevelScan，复用Scan的逻辑。
+
+     **注意**：LowLevelSeek、LowLevelScan 见 Scan 部分详细介绍
+
+  
+
+##### 源码解析
+
+[TN Read Tablet](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_read_tablet.md)
+
+
 
 #### scan
 
-##### 注意
+* Client
+
+  1. 客户端支持请求的异步、同步、批量写等特性，其中重要的数据结构，[ScanDescImpl](https://github.com/joeylichang/tera/blob/master/src/sdk/scan_impl.h)[ResultStreamImpl](https://github.com/joeylichang/tera/blob/master/src/sdk/scan_impl.h)。
+  2. Scan 在 Client 支持 Filter （例如：针对指定的cf和qu，其下的value 大于或者小于 某个数值） 和 FilterList （Filter 的 “与”、“并” 语义的组合），使用详情见 SDK 的说明。
+
+* TableNode
+
+  在 TableNode Scan 分位两种大类（四小类）进行处理：
+
+  1. BatchScan：既一次遍历需要多个RPC请求，期间需要缓存中间状态（详见[BatchScan](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_batch_scan.md)介绍），内部分为 KV 和 非 KV。
+  2. Scan（非Batch）：一次请求遍历完，内部分为 KV 和 非 KV。
+
+  
+
+  ##### BatchScan
+
+  BatchScan 与 普通的 Scan 最大的区别是需要保留上次遍历的中间状态，便于下次从断点继续遍历，TabletNode 在此使用了 LevelDB 的 Cache 缓存 [ScanContext]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_batch_scan.md#scancontext%E8%B0%83%E5%BA%A6%E6%9C%BA%E5%88%B6](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_batch_scan.md#scancontext调度机制))（记录遍历状态的数据结构），通过ScanContextManager 完成调度进而完成请求。
+
+  在 BatchScan 中也会区分是否是 KV 类型的遍历，KV 与 非KV 之间的区别在于，非KV的一个 Cell 是由多个 LevelDB 层的 KV 对组成，这给数据的组织和过滤都带了一定的复杂度（**注意：这也是 KV 性能会优于 非 KV 的原因，所以能使用 KV 存储的尽量使用KV**）。
+
+  ###### 非KV BatchScan
+
+  1. 从缓存中获取  ScanContext，如果没有说明是第一个遍历的请求，初始化一个返回。
+  2. 从 ScanContext 中的迭代器（LevelDB 的迭代器，上次遍历的位置）开始遍历 LevelDB 的 KV 对。
+     1. 判断是否完成遍历，既是否等于 scan_end_key（保存在 ScanContext 中），如果是，则跳出循环。
+     2. 判断是否超时，是则跳出循环。
+     3. 判断 Key 解析之后的 col 是否在遍历的目标 CF 集合中。
+     4. 调用 DefaultCompactStrategy 的 ScanDrop 判断当前的 KV 对是否在Schema（可能schema有变更）、过期 、已经被删除（如上介绍的删除类型）。
+     5. 判断是否完成一整行的遍历，标准是当前解析出来的 RowKey 是否与之前的相同（向的Key一定连续存储）。
+        1. 如果遍历完一整行，判断是否需要过滤该行（根据 Scan 请求中的 Filter、FilterList），col、qua是否在请求的集合中、时间戳是否过期。
+        2. 都通过与之后序列化到结果的 Buffer 中。
+     6. 比较相同的 RawKey（RowKey + col + qua）比较版本是否超过请求设置的情况。
+     7. RowKey + col 相同，qua 不同，比较 qua 是否在 Scan 的范围内。
+     8. 记录当前的结果（一个 Cell 的中间结果，既 LevelDB 的 KV 对）到 ScanContext 中。
+     9. 判断是否进行 LevelDB 的 KV 对 的合并，针对 TKT_VALUE、TKT_ADD、TKT_ADDINT64、TKT_PUT_IFABSENT、TKT_APPEND 类型的 LevelDB Key。
+        1. 如果有合并需要修改 ScanContext 的中间结果。
+     10. 将结果放入 Buffer 中，待完成的一行结束时进行校验是否丢弃（见步骤4）。
+     11. 如果 Scan 的结果大小 > 请求设置的闸值 || Sacn 的记录调试 > 请求设置的闸值 ，则跳出闸值。
+  3. 检查用户设置了 Filter && 检测`Buffer' 中的最后一行数据不是一整行 && 针对行级别需要进行过滤（用户指定的规则）
+     1. 满足上述条件：跳转到下一行。
+     2. 不满足上述条件：上述跳出循环，可能最后一行没有进行上述步骤 2.4，在这里针对最后一行进行处理
+
+  
+
+  ###### KV BatchScan
+
+  与 非KV 相比最大的区别是，直接遍历 LevelDB 层的 KV，没有合并等复杂逻辑。
+
+  1. 判断是否完成遍历，既是否等于 scan_end_key（保存在 ScanContext 中），如果是，则跳出循环。
+  2. 超时、返回包大小、请求条目是否超过闸值，是则跳出循环。
+  3. 判断是否过期、已经被删除、是否在 Schema（DefaultCompactStrategy 的 ScanDrop ）。
+  4. 将数据写入保存结果的 Buffer 中。
+
+  
+
+  ##### Scan（非Batch）
+
+  非 Bach 类的 Scan 相对于 BatchScan 简单一些，因为不需要维护中间状态，复用了很多上面的逻辑。
+
+  ###### 非KV Scan
+
+  非KV 的 Scan 在进行遍历之前，初始化了一个 ScanContext 结构，并初始化相关成员变量，在遍历之后对其进行销毁。内部逻辑完全复用上述的 [非KV BatchScan]()。
+
+  
+
+  ###### KV Scan
+
+  KV Scan 与 KV BatchScan 逻辑基本一致，需要注意的是，请求中也可以设定返回结果的大小，如果遍历的范围超过闸值，会进行阶段。
+
+  
+
+##### 源码解析
+
+[TabletNode Batch Scan](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_batch_scan.md)
+
+[TabletNode Scan](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/tablet_node/procedure/tn_scan_tablet.md)
+
+
 
 #### transaction
 

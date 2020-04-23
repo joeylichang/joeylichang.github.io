@@ -122,7 +122,7 @@ bool TabletIO::HandleScan(const ScanTabletRequest* request, ScanTabletResponse* 
 
 ### TabletIO::ProcessScan
 
-ProcessScan针对是否是kv类型进行了分类处理，除此只玩还进行了一些统计信息。
+ProcessScan针对是否是kv类型进行了分类处理，除此之外还进行了一些统计信息。
 
 ```c++
 void TabletIO::ProcessScan(ScanContext* context) {
@@ -384,7 +384,7 @@ bool TabletIO::LowLevelScan(const std::string& start_tera_key, const std::string
 
 ### KV遍历
 
-kv遍历的逻辑想多简单一些，没有涉及过滤和多key合并的问题，kv处理用户指定外，最主要的是meta_table的使用。
+kv遍历的逻辑想多简单一些，没有涉及过滤和多key合并的问题，kv模式用户指定外，最主要的是meta_table的使用。
 
 ```c++
 bool TabletIO::KvTableScan(ScanContext* scan_context, uint32_t* read_row_count,

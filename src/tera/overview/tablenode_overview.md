@@ -134,6 +134,13 @@ TableCache 存储的是 key->db_name+file_name，value->sst的索引数据。读
 
 除了 LevelDB 自身根据打分进行的 Compact，Tera 还支持客户端通过接口调用执行 Compact（启动新的线程，分 lg 并行进行）。
 
+在 Compact 阶段，Tera 引入了 DefaultCompactStrategy 来判断 Key 是否删除，有两个接口：
+
+1. ScanDrop：scan 是判断是否需要过滤掉数据。
+2. Drop：compact 期间是否删除相应数据。
+
+数据删除会在 Key 的编码（后面介绍）中有所体现，这是 DefaultCompactStrategy 判断重要依据。DefaultCompactStrategy 还会根据 Schema 设置保留的版本等特征进行 Compact。
+
 
 
 ##### LevelDB 解析 && Option
