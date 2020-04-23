@@ -1,4 +1,4 @@
-# TN Write Tablet
+# TN Read Tablet
 
 TabletServer write tablet 主要经过三层的流转，每层主要工作如下：
 
