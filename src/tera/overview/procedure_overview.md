@@ -663,11 +663,190 @@
 
 #### transaction
 
+经过前面的介绍可知，Tera 天然支持行级写的原子操作，显然这远远不够，事务一直是列式存储 和 NewSQL 的难点（前面的系列文章我们有过介绍过）。Tera 也为此进了设计，先是设计了单行的 ready-modfy-write（可以多次读） 事务，然后再此基础上完成了全局的跨行、跨表事务。
+
+需要注意的是，这两种事务都需要 TabletNode 和 Client 配合完成，但是目前开源的版本中 TabletNode 并没有完成相关的开发，再此对其介绍主要是学习期设计思路（后面的文章还会对其事务进行分析，本部分还是以介绍为主）。
+
+
+
 ##### single row transaction
 
-##### 注意
+单行事务的核心思想：
+
+1. 将所有需要的数据都读到 Client 本地，包括数据、删除标记、时间戳。
+2. 将所有的更新写到本地的内存中。
+3. commit 时，将更新的数据 、读取的数据、及其时间戳一起提交。
+4. TabletNode 根据时间戳校验当前的数据（之前读的数据）是否是最新的版本，是的话进行更新，否则任务失败。
+
+对于同一行不同 CF、qua 的两个事物是不会有影响的。同时需要注意的是，事物都是基于最新的版本进行的，不能基于历史版本进行。
+
+上述设计避免了如下问题：
+
+1.  脏读：事物未更新之前的数据都在 Client 本地不会提交，既 未提交的数据不会在 TableNode 上，也就读不到
+2. 不可重复读：同一个数据读取一次保存在 Client 本地，一定可重复。
+3. 幻读：事物未更新之前的数据都在 Client 本地不会提交，既 未提交的数据不会在 TableNode 上，也就读不到
+4. 写倾斜：由于 TableNode 更新的时候会校验读数据的时间戳，保证了 读X写Y 与 读Y写X 同时进行只有一个成功。
+
+但是上述情况保证不了更新不被丢失，既 T1（读X写Y）先开始，T2（读Z写Y）后开始，由于网络延时T2先完成了，之后被T1覆盖了，如果在更新数据时，加上对需要更新的数据加上时间戳（或者版本号-读取数据时的版本号）的校验，可以解决上述问题，保证了单行数据更新事务的串行化。 
+
+##### 参考资料
+
+[单行事务设计](https://github.com/joeylichang/tera/blob/master/doc/single_row_txn.md)
+
+[事务隔离级别]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md#%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md#事务隔离级别))
+
+
 
 ##### global transaction
 
-##### 注意
+* 全局事务设计
+
+  * LockQua + WriteQua
+
+    Tera 的全局事务使用了两阶段提交的方式。第一阶段抢占数据（对数据加锁），加锁的方式是给关注的 Cell 加一个额外的列 LockQua（包含时间戳，判断所有的前后顺序） 标识该数据已经加锁。第二阶段完成数据的更新，除了用户数据的更新，还需要删除数据，并且写入数据更新的索引数列 WriteQua（包含时间戳，WriteQua 与 用户数据的时间戳一致，便于下一个事务读到正确的数据）。
+
+    1. LockQua：key = cf + qua（!L+qua），value = type + PrimaryInfo(table_name, row_key, cf, qua, gtxn_start_ts, client_session)
+    2. WriteQua：key = cf + qua（!W+qua），value = type + timestamp
+
+  * TimeOracle
+
+    分布式事务需要跨机器网络交互，需要有一个统一的递增时间戳（上述的方案亦是如此），Tera 为此设计了 TimeOracle 模块，提供一个全局递增的是时间戳服务（保证不会回退），利用 ZK 存储全局时间戳，避免 TimeOracle 因重启，造成时钟有回滚。
+
+  
+
+* ApplyMutation
+
+  ApplyMutation 是全局事务的写操作，一般数据的流程是先 Get -> Logic（业务逻辑） -> Write -> Commit。为了方便描述整个流程（Get 有事务补偿机制会涉及到写的部分），将 ApplyMutation 和 Commit 提前介绍。
+
+  1. 校验
+
+     1. 写入数据的总大小不能超过闸值（默认10K）。
+     2. 检查schema 设定的时候是否支持 gtxn。
+        1. schema 开启了enable_txn
+        2. schema 中 CFschema 开启了gtxn。
+        3. 写操作记录数不能为空
+
+  2. 将更新的数据，保存到 Client 内存（writes_ 成员变量）。
+
+     1. writes_ ： < <std::string, std::string>, std::vector < Write > >
+
+        ​					tablename， rowkey       ，Write（cell_， type_， is_primary_ ， Serialize(PrimaryInfo) ）
+
+        
+
+* Commit
+
+  1. CommitPhase1 -> prewrite
+
+     1. prewrite_start_ts_设定。
+        1. 如果是 kReadCommitedSnapshot 隔离级别，会重新获取全局时钟赋值给 prewrite_start_ts_ 。
+        2. 如果是 kSnapshot 隔离级别， prewrite_start_ts_ 是 start_ts_（来自 TimeOracle，事务开始的时间，既第一次 Get 的时间）。
+     2. writes_ 遍历map，从第一条std::vector<Write> 开始，逐个<tablename, rowkey>进行，（支持跨表、跨行）。
+        1. 使用single_row_txn Get ,LockName(!L + qua)/WreiteName(!W + qua)/DataName(qua)
+        2. 判断是否和其它的事务有冲突
+           1. WriteName 的 时间戳是否大于 prewrite_start_ts_
+           2. LockName 是否存在这个列cell
+        3. 如果没有冲突
+           1. put key = cf + LockName（!L + qua） , val = type + serialized_primary_ , timestamp = prewrite_start_ts_
+           2. put key = cf + DataName(qua), val = user_value, timestamp = prewrite_start_ts_
+        4. 循环将writes_ 中说有的 <tablename, rowkey> 对的 std::vector<Write> 都进行prewrite
+
+  2. CommitPhase2 -> write
+
+     1. commit_ts_ 获取全局时钟（大于prewrite_start_ts_）。
+     2. SingleRowTxn 方式 Get LockName 版本号是 prewrite_start_ts_ 的数据
+     3. 回调中执行真正的写入
+        1. put key = cf + WriteName(!W + qua)， value = type + prewrite_start_ts_,   timestamp = commit_ts_ 
+        2. DeleteColumns key =  cf + LockName(!L + qua)，timestamp = commit_ts_(小于这个时间的版本都删除)
+     4. 循环调用 步骤3 的逻辑执行完所有的writes_内所有<tablename, rowkey> 对的 std::vector< Write >
+
+  3. **注意**
+
+     值得注意的是三个时间戳  start_ts_、 prewrite_start_ts_ 、commit_ts_，start_ts 是事务开始的时间戳（或者理解为事务开始时读的时间戳），prewrite_start_ts_ 是事务 Commit 开始的时间戳（既预写-CommitPhase1-的时间戳），commit_ts 是最后正式更新的时间戳（CommitPhase2 的时间戳）。在 kSnapshot 隔离级别时，prewrite_start_ts_ == start_ts。
+
+     下面分析一下三个时间戳的使用，在 CommitPhase1 阶段，写 Lock 和 Data 使用的是 prewrite_start_ts_。在 CommitPhase2 阶段，写入 WriteName 的 Value 中使用 prewrite_start_ts_ 时间戳，目的是通过这个时间戳可以找到对应版本的 Data（Get部分有用到），但是 WriteName 这条数据本身的时间戳是 commit_ts_，然后删除所有小于 commit_ts_ 的 Lock，目的是清除之前残存的锁（可能是异常情况导致）。
+
+  
+
+* Get
+
+  1. 校验
+
+     1. 检查schema 设定的时候是否支持gtxn
+        1. schema 开启了enable_txn
+        2. schema 中 CFschema 开启了gtxn
+     2. 不支持读整行数据
+     3. 不支持读某一个版本
+
+  2. 遍历需要 Get 的 cell 信息，加入 Clent 内存（cells向量）
+
+     1. cells.push_back(new Cell(table, row_key, column_family, qualifier));
+
+  3. 遍历cells，AsyncGetCell
+
+     1. 读取的一个cell，对应三个cell，或者说三列
+     2. cf + qua（!L+qua），其 value = type + PrimaryInfo(table_name, row_key, cf, qua, gtxn_start_ts, client_session)
+     3. cf + qua（!W+qua），其 value = type + timestamp
+     4. cf + qua（qua）   ，其 value = user_data（user_val + type + timestamp）
+
+  4. 判断是否有其他的事务正在占用这个 cell（读取的结果中有 LockName（!L + qua） 这个cell，并且时间戳在当前事务的前面）
+
+     1. 如果有事务占用
+
+        1. 找到第一个时间戳小于 start_ts_ 的LockName数据，并解析lock_type 和 primary_info。—— **尚未结束的之前的事务**
+
+        2. 去TN 重新获取数据，查看是否有一个LockName 的时间戳与 lock_ts （第一个时间戳小于 start_ts_ ）相等，没有说明前一个事务结束了。
+
+        3. 如果有这条数据
+
+           1. 设置了try_clean（重试了10次，1次1s）， 删除[0, start_ts_] 的所有的锁 。—— **强制删除了其他事物的锁信息** 
+           2. 没有设置try_clean，并且zk 有primary（lockName的val）客户端信息，则sleep 1s。——**重试10次，10s 还未结束强制删除**
+           3. 否则删除[0, start_ts_] 的所有的锁
+
+        4. 如果没有这条数据（**说明其他事务已经结束了，或者异常了**）， 且不是当前事务 锁住了当前rowkey
+
+           1. 找到 WriteName 的时间戳为 primary.gtxn_start_ts() （**上述Commit 中的 prewrite_ts_**）的那条数据（其它事务的写入记录）。
+
+           2. WriteName 记录时间戳（既版本号）作为commit_ts
+
+              **注意**：WriteName 记录时间戳 不是其val（type + timestamp）中的时间戳（**Commit 中的prewrite_ts_**），而是TN存入数据的时间戳，是数据的版本号（**上述Commit 中的 commit_ts**），数据的版本号是用户传入的，应该是写入第二阶段的的commit_ts_
+
+           3. put cf + writename + （locktype + primary.gtxn_start_ts() ）
+
+           4. DeleteColumns cf + LockName + commit_ts
+
+        **注意**：4.1 - 4.4 算是一种补偿手段，其他事物异常了，但是数据可能未更新完成，此时完成上一个事务的更新操作。
+
+     2. 如果没有事务占用，读取最近一次的更新并写入 cells 中相应的cell
+
+        1. WriteName 的 value [type + timestamp] 中的 timestamp（**Commit 中的prewrite_ts_**） 第一个小于当前事务的开始时间 start_ts_
+        2. 找到  WriteName 的 value[type + timestamp] 中的timestamp（**Commit 中的prewrite_ts_**） 等于读到的DataName 的 timestamp（**Commit 中的prewrite_ts_**） 并且类型是kPut
+        3. 将 timestamp 和 val 设置到 cells中想用的cell
+
+  5. 所有cell 读取完毕，会设置reader_impl 的 result中并调用用户回调
+
+   
+
+* 问题
+
+  1. kReadCommitedSnapshot 隔离级别，写的数据如果依赖自己本身数据，会有如下问题：
+
+     例如，事务刚开始进行读是的时间戳是 T1，业务逻辑要根据该数据做出逻辑进行判断，然后在T2时刻更新该数据（此时 start_ts = T1，prewite_ts = T2，且 T2 > T1），在 T1 与 T2 之间有一个事务完成了更新该条数据，那么当前事务出现了异常。
+
+  2. T1 < T2 两个事务执行 CommitPhase1，都读到了没有事务未结束，并且更新了 Lock 和 Data，假设 T1 先更新被 T2 覆盖了，在  CommitPhase2 中会读取各自时间戳的 Lock，此时 T1 会失败。
+
+  3. 不使用全局事务的正常更新也会成功，事务都是基于本版的，一个普通更新在事务期间，可能被覆盖，所以需要对 CompactStragy 进行修改（或者支持全局事务的 CF 必须使用全局事务才能更新，这也需要 TabletNode 侧进行修改，做更新、读取的校验）。
+
+
+
+* 隔离级别
+
+  |            | kSnapshot | kReadCommitedSnapshot | 备注                                                         |
+  | ---------- | --------- | --------------------- | ------------------------------------------------------------ |
+  | 丢失更新   | 解决      | 解决                  | 更新时会先读取数据的时间戳进行校验，不会出现后一个事务覆盖前一个事务 |
+  | 脏读       | 解决      | 解决                  | 更新都是在本地，不会出现未提交的数据在 TabletNode，让其他事务读到，CommitPhase1阶段会出现，但是更新之前会读进行时间戳校验。 |
+  | 不可重复读 | 解决      | 未解决                | 如问题1                                                      |
+  | 幻读       | 解决      | 解决                  | 如脏读备注                                                   |
+  | 写倾斜     | 未解决    | 未解决                | rXwY，rYwX，两个事务“一起”读完，然后进行更新，读期间会正常，但是不等同于两个事务串行的结果。 |
+  | 隔离级别   | SI        | 读已提交              | SI 隔离级别，保证是基于版本号更新，但是未解决写倾斜问题。读已提交 隔离级别，保证了读到的数据是已经提交的（可能是后来的事务已经更新了），允许不可重复读的情况。 |
 
