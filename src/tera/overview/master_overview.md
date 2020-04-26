@@ -19,7 +19,7 @@
     * [Tablet State machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tablet-state-machine)
   * [Procedure Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#procedure-arch)
   * [AccessControl](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#access-control)
-  * [Quta](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#quta)
+  * [Quota](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#quta)
   
     
 
@@ -409,7 +409,121 @@ Master对CreateTable、分裂、合并、迁移等12种操作进行了抽象，�
    2. namespace ：namespace_name、（读、写、admin）
    3. table ：namespace_name、table_name、cf、qua、（读、写、admin）
 
-### Quta
+### Quota
+
+##### 分类
+
+1. Table 维度
+
+   ```protobuf
+   enum QuotaOperationType {
+   	    kQuotaWriteReqs = 1;
+   	    kQuotaWriteBytes = 2;
+   	    kQuotaReadReqs = 3;
+   	    kQuotaReadBytes = 4;
+   	    kQuotaScanReqs = 5;
+   	    kQuotaScanBytes = 6;
+   	}
+   ```
+
+   
+
+2. TableNode
+
+   1. TsWriteFlowController：Client 写入 TabletNode 限流。
+
+3. TableNode to DFS
+
+   1. DfsWriteThroughputHardLimiter：TabletNode 写 DFS 的限流。
+   2. DfsReadThroughputHardLimiter：TableNode 读 DFS 的限流。
+
+   
+
+##### Master 侧
+
+1. Table 维度
+
+   通过接口设置、从 MetaTable 中读取 Qutoa 信息，读取 Table 维度的信息。
+
+   1. Table 级别的 Quota 根据 tablet 数目平均分。
+   2. 根据 TabletNode 上面该 Table 的 Tablet 数量，累计计算 Qutoa。
+   3. 对于没有该 Table 的 TabletNode ，设置 Quota 为 -1（没有限制）。
+   4. 在心跳信息中，将 TabletNode 的 Quota 设置发送下去。
+
+2. TableNode
+
+   主要是计算一个 Ratio，作为满额 Quota 限流的比率。
+
+   1. 每一轮心跳过后，进行计算一次。
+
+   2. dfs_write_bytes 维度
+
+      1. 计算心跳中所有 TabletNode 的 dfs_io_w 总和，最近10次的平均值
+      2. slowdown_write_ratio = cluster_dfs_write_bytes_quota_（设定值）/ 均值
+
+   3. dfs_qps 维度
+
+      1. 计算心跳中所有 TabletNode 的 dfs_master_qps 总和，最近10次的平均值
+      2. slowdown_write_ratio = cluster_dfs_qps_quota/均值
+
+   4. 取两个维度 slowdown_write_ratio 的最小值。
+
+   5. 如果 slowdown_write_ratio < 1设置（通过心跳下发），否则解除限流。
+
+      **注意**：cluster_dfs_write_bytes_quota_ 、 cluster_dfs_qps_quota 默认情况下为 -1，既不设置流控。
+
+3. TableNode to DFS
+
+   1. DfsWriteThroughputHardLimit
+
+      1. 每一轮心跳过后，进行计算一次。
+      2. 设置硬限（dfs_write_bytes_hard_limit_）的一半（预留的Buffer），平均分给每一个 TabletNode。
+      3. 如果节点有 dfs_io_w 这个统计项的值，则在上述基础上*（当前节点的 dfs_io_w 占全有节点的dfs_io_w 之和的比例）。
+
+   2. RefreshDfsReadThroughputHardLimit
+
+      1. 读硬限逻辑同上，只不过统计项是 dfs_read_bytes_hard_limit_。
+
+      **注意**：dfs_write_bytes_hard_limit_、dfs_read_bytes_hard_limit_，默认情况下为 -1，既不设置读写的硬限。
 
 
 
+##### TabletNode 侧
+
+1. Table 维度
+
+   1. 在进行消费 Quota 时，每种 Quota 的策略不一样（读、Scan 需要预估）。
+
+      1. kQuotaWriteReqs  : 请求多少闸值消费多少
+      2. kQuotaWriteBytes : 请求多少闸值消费多少
+      3. kQuotaReadReqs   : 请求多少闸值消费多少
+      4. kQuotaReadBytes  : 进行预估大小
+      5. kQuotaScanReqs   : 进行预估大小
+      6. kQuotaScanBytes  : 进行预估大小
+
+   2. 预估大小
+
+      1. 默认(初始化) 1qps 默认读取 1KB的数据。
+      2. 默认(初始化) 1qps 的 Scan 读取 1KB的数据。
+      3. 默认(初始化) 1qps 的 Scan 读取 1KB的条目（既 Scan QPS）。
+
+   3. 反馈调节
+
+      预估的数据肯定是不准确的，也不够灵活，需要一个反馈机制对预防的方式进行调节。每次 read、scan 之后进行都会进行一次反馈。下面看一下调节的逻辑：
+
+      1. 上次值 * 0.9(默认值) + 最近一次请求完成之后的数据 * （1 - 0.9）。
+
+2. TsWriteFlowController
+
+   1. 写入阶段会进行消费 Quta，如果设置了限流，且剩余 Quta 不够，则写失败。
+   2. 在 CompactTablet 请求中，如果处于限流期间，请求直接失败。
+
+3. DfsWriteThroughputHardLimiter、DfsReadThroughputHardLimiter
+
+   1. TabletNode 访问 DFS 使用的限流，会调用其 BlockingConsume 接口，如果剩余的 Quota 不够，会等待知道 Quota 够用（默认 1s 刷新一次）再返回（内部使用条件变量实现）。
+
+   
+
+##### TabletNode Read DFS
+
+最后，TabletNode 读 DFS 的线程数，也是有限制的（信号量实现），默认 TabletNode 有40个读线程（TabletNode 的线程架构部分介绍），限流的比例是0.7（默认），既最多 28个线程进行读。

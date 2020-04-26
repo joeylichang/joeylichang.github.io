@@ -75,6 +75,7 @@ Tera 对LevelDB 进行了一些改动目的是支持系统的设计需求，上�
 4. 支持多线程Compact（默认8个线程）。
 5. 对ENV进行继承，支持多套环境，包括HDFS、AFS（百度自研）、Local等（本系列关注HDFS）。
 6. 增加PersistentCache，利用本地SSD磁盘缓存 SST 文件。
+7. TableNode 读 DFS 线程数目限制。
 
 
 
