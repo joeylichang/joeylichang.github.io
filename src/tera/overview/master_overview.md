@@ -15,11 +15,13 @@
     * [TabletNode Delete](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-delete)
     * [TabletNode KickOff](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tabletnode-kickoff)
   * [Tablet In Master](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tablet-in-master)
+    
     * [Tablet State machine](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#tablet-state-machine)
   * [Procedure Arch](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#procedure-arch)
   * [AccessControl](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#access-control)
   * [Quta](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#quta)
-  * [Disaster Desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md#disaster-desgin)
+  
+    
 
 ### Master Arch
 
@@ -409,5 +411,5 @@ Master对CreateTable、分裂、合并、迁移等12种操作进行了抽象，�
 
 ### Quta
 
-### Disaster Desgin
+
 

@@ -1,47 +1,111 @@
-1. master故障元数据恢复
-2. 全局事务的设计 不够完整
-3. LB策略
-4. HDFS
-5. kv 表格 CPU利用率
-6. 负载均衡 概率，容量搬迁总是选举，并且较为频繁
-7. hdfs 小文件
-8. 与 BigTable 对比
-   1. PB 级的数据，上千台机器上
-   2. 有的需要高吞 吐量的批处理，有的则需要及时响应，快速返回数据给最终用户。
-   3. 利用这个模型，客户可以动态控 制数据的分布和格式，用户也可以自己推测3底层存储数据的位置相关性4。
-   4. 可以通过 BigTable 的模式参数来控制数据是存放在内存中、还是硬盘上。
-   5. Bigtable 是一个稀疏的、分布式的、持久化存储的多维度排序 Map5。
-   6. 位置相关性
-      1. 用户可以通过选择合适的行关键字，在数据访问时有效利 用数据的位置相关性，从而更好的利用这个特性。
-   7. 访问控制、磁盘和内存的使用统计都是在列族层面进行的。
-   8. 用户可以指定只保存最后 n 个版本的数据，或者只保存“足够新”的 版本的数据
-      1. Tera 这部分逻辑在哪里？
-   9. Chubby
-      1. 类似 Tera 的ZK + MetaTable
-      2. 存储的元数据也不一样，BigTable 的模式信息、存储访问控制列表 都是在 Chubby 内
-      3. 元数据组织完全不一样，BigTable 是三级，Tera 是两级
-      4. 在 METADATA 表中还存储了次级信息12，包括每个 Tablet 的事件日志（例如，什么时候一个服务器开始 为该 Tablet 提供服务）。这些信息有助于排查错误和性能分析。
-   10. BigTable 可以动态的向集群中添加（或者删除）Tablet 服务器。
-   11. 由于 BigTable 的客户程序不必通过 Master 服务器来获取 Tablet 的位置信息，因此，大多数客户程序甚至完全不需要和 Master 服务器通信。在实际应用中，Master 服 务器的负载是很轻的。
-       1. Tera 是直接从 ZK 获取的吗？那部分ZK 会不会压力很大
-   12. 节点的 加入离开也不一样
-   13. BigTable Master 重启之后 同样会扫描所有的机器收集一次信息
-   14. 元信息发生变化场景
-       1. 建立了一个新表或者删除了一个旧表
-       2. 两个 Tablet 被合并了
-       3. 一个 Tablet 被分割成两个小的 Tablet
-   15. 。为了恢复一个 Tablet，Tablet 服务器首先从 METADATA 表中读取它的元数据。Tablet 的元数据包 含了组成这个 Tablet 的 SSTable 的列表，以及一系列的 Redo Point15，这些 Redo Point 指向可能含有该 Tablet 数据的已提交的日志记录
-   16. 当进行 Tablet 的合并和分割时，正在进行的读写操作能够继续进行。
-       1. Tera 进行校验的逻辑应该仔细看一下
-   17. 局部性群组的作用
-       1. 将通常不会一起访问的列族分割成不同的局部性群组可以提高读取操作的效率
-       2. Tablet 服务器依照惰性加载的策略将设定为放入内存的局部性群组的 SSTable 装载进内存。加载 完成之后，访问属于该局部性群组的列族的时候就不必读取硬盘了。这个特性对于需要频繁访问的小块数据 特别有用：在 Bigtable 内部，我们利用这个特性提高 METADATA 表中具有位置相关性的列族的访问速度。
-   18. 压缩算法 比较高效
-   19. 设置每个 Tablet 服务器一个 Commit 日志文件，把修改操作的日志以追加方式写入同一个日志文件，因此 一个实际的日志文件中混合了对多个 Tablet 修改的日志记录。
-       1. 我们首先把日志按照关键字（table，row name，log sequence number）排序。 排序之后，对同一个 Tablet 的修改操作的日志记录就连续存放在了一起，
-       2. 为了并行排序，我们先将日志分割成 64MB 的段，之后在不同的 Tablet 服务器对段 进行并行排序。这个排序工作由 Master 服务器来协同处理，并且在一个 Tablet 服务器表明自己需要从 Commit 日志文件恢复 Tablet 时开始执行。
-   20. 在向 GFS 中写 Commit 日志的时候可能会引起系统颠簸，原因是多种多样的（比如，写操作正在进行的 时候，一个 GFS 服务器宕机了；或者连接三个 GFS 副本所在的服务器的网络拥塞或者过载了）。为了确保在 GFS 负载高峰时修改操作还能顺利进行，每个 Tablet 服务器实际上有两个日志写入线程，每个线程都写自己 的日志文件，并且在任何时刻，只有一个线程是工作的。如果一个线程的在写入的时候效率很低，Tablet 服务 器就切换到另外一个线程，修改操作的日志记录就写入到这个线程对应的日志文件中。每个日志记录都有一 个序列号，因此，在恢复的时候，Tablet 服务器能够检测出并忽略掉那些由于线程切换而导致的重复的记录。
-   21. BigTable 日志 批量提交，Tera 好像没有吧？
-   22. memtable 我们对内存表采用 COW(Copy-on-write)机制，这样就允许读写操作并行执 行。
-   23. 性能对比
+# Think In
 
+### BigTable Compare
+
+##### Chubby
+
+1. Chubby 介绍
+   1. Chubby 提供了一个名字空间，里面包括了目录 和 小文件（与 ZK 区别）
+   2. 每个目录或者文件可以当成一个锁，读写文件的操作都是原子的。
+   3. Chubby 客户端与 Chubby 通过租期保持 Session，当一个 Session 失效时，它拥有的锁和打开的文件句柄也都失效了。
+   4. 当 Chubby 内部的文件或者目录有变更时，客户端会受到通知。
+2. 在 BigTable 中的使用
+   1. Master 选主。
+   2. 存储 BigTable 数据的自引导指令的位置（类似 MetaTablet 的位置）。
+   3. 查找 Tablet 服务器，以及在 Tablet 服务器失效时进行善后。
+   4. 存储 BigTable 的模式信息（与 Tera 区别）。
+   5. 以及存储访问控制列表。（与 Tera 区别）
+3. VS. Tera
+   1. ZK 不支持文件。
+   2. Table Schema 信息 以及 ACL 存储在 MetaTable中。
+
+
+
+##### MetaData
+
+![bigtable_metadata_argan](../../../images/bigtable_metadata_argan.png)
+
+1. MetaData 三层索引
+   1. 在 Chubby 中的一个 File 保存着 Root Tablet 的位置。
+   2. Root Tablet（唯一且永不分裂） 保存着 MetaData Table 所有 Tablet 的位置。
+   3. MetaData Table 中保存着其他所有 Table 的 Tablet 的位置。
+2. VS. Tera
+   1. Tera 的 MetaTablet = Root Tablet +  MetaDataTableTablets，既两层索引。
+   2. Bigtable 
+      1. 容量更大，METADATA 的每一行都存储了大约 1KB 的内存数据，128MB 的 METADATA Tablet 中，采用这种三层结构的存储模式，可以标识 2^34 个 Tablet 的地址（RootTablet * MetaDataTablet = 2^17 * 2^17）。
+      2. 如果客户端的缓存失效，网络IO 次数最多达6次（3次失效 + 3 次请求）。
+   3. Tera
+      1. 同样大条记录大约 1KB 的内存数据（实际没有这么大），128MB 的 MetaTablet 能够标识 2^17 个 Tablet 的地址（同样情况下容量介绍一半）。
+      2. 如果客户端的缓存失效，网络IO 次数最多达4次（2次失效 + 2 次请求）。
+
+
+
+##### Spilt Tablet
+
+1. Tera：Master 发起，控制全流程。
+2. BigTable：TabletNode 发起，好处是更及时，甚至很多用于判断是否分裂的信息不需要再汇报给 Master 较少网络带宽。
+   1. 问题：TableNode 完成分裂之后如果通知 Master 失败（网络、Master、TabletNode 故障），Master 在分配 Tablet 加载时，TableNode（不一定是之前的 TabletNode）会发现因为分裂导致加载不起来（可能是 GFS 层有变化），此时 TableNode 会上报给 Master 与 RootTablet 进行对比，完成两个 Tablet 的加载。
+
+
+
+##### Cache
+
+Bigtable 没有 Persistent（SSD 盘）的缓存。
+
+
+
+##### WAL
+
+Tera
+
+1. 一个 Tablet 一个 wal 日志，一个 TabletNode 对应多个日志。
+
+Bigtable
+
+1. 一个 TabletNode 对应一个 wal 日志。
+   1. 优点是减少了对 GFS 的 seek 并行度。
+   2. 缺点是 Tablet 恢复会很慢。
+      1. 为此对日志进行排序（table，row name，log sequence number），这样用一个 Tablet 的日志连续排在一起。
+      2. 对日志进行 64MB 进行分段，每次恢复的时候由 Master 协调其他节点分段进行排序（一般 wal 日志不会过大，除非批量删除等极少数场景）。
+
+
+
+##### 总结
+
+1. Chubby vs. ZK
+2. MetaTablet 三级索引 vs. 二级索引
+3. SpiltTablet TableNode 发起 vs. Master 发起。
+4. 内存耳机缓存 vs. 内存 + SSD 三级缓存。
+5. WAL TabletNode 共享（排毒） vs. Tablet 共享。
+
+
+
+### Disaster
+
+
+
+### Question
+
+
+
+### Q&A
+
+
+
+1. master故障元数据恢复
+
+2. 全局事务的设计 不够完整 
+
+3. LB策略
+
+4. HDFS
+
+5. kv 表格 CPU利用率
+
+6. 负载均衡 概率，容量搬迁总是选举，并且较为频繁
+
+7. hdfs 小文件
+
+8. TabletNode 没有权限验证
+
+   
