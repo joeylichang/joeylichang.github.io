@@ -72,7 +72,7 @@ TabletNode 与 DFS的一致性，在进行更新操作时主要是两部分，�
 
 Tera 的数据模型完全参考 BigTable，其数据组织情况如下图所示：
 
-<img src="../../../images/tera_data_schema.png" alt="tera_data_schema.png" style="zoom:10%;" />
+<img src="../../../images/tera_data_schema.png" alt="tera_data_schema.png" style="zoom:50%;" />
 
 与传统的表模式相比，Tera支持以时间戳为版本号的多版本存储，既上述三维空间。Tablet 是可以理解为一个 Table 的水平切分，既一行数据一定在一个Tablet内。一个 TabletNode 对应多个 Tablets（可以是来自不同的Table）。一张表格可以理解为如下的多级map： 
 
@@ -83,6 +83,8 @@ map<RowKey, map<ColummnFamily:Qualifier, map<Timestamp, Value> > >
 RowKey 代表 user_key 也是 Tablet 分区管理的依据。Qualifier 是 列的概念，ColummnFamily 由多个Qualifier组成的列簇，Timestamp 代表数据的时间戳由 Client 传进来，Value是用户存储的数据。LevelDB存储的RawKey = 编码（RowKey + ColummnFamily + Qualifier + Timestamp + Type） （编码规则后续介绍）。
 
 Tera 除了上述逻辑划分的概念 还支持 Locality Group 物理划分，Locality Group 是由多个 ColummnFamily 组成（ColummnFamily 必须属于一个 Locality Group），一个 Locality Group 对应一个 LevelDB 实例（一个LevelDB目录）。Locality Group 可以加速 经常一起处理的 ColummnFamily 性能。一个 Table 可以划分若干个   Locality Group，同一个表格里的所有 Tablets 都会有相同数量的 Locality Group，既LevelDB，每一个LevelDB内负责不同区间的RowKey。
+
+如果所有的 CF 属于一个 LevelDB 实例，访问一行中的某些列，会浪费资源很多无用的列，如果每个 CF 用一个 LG（LevelDB实例），如果访问一行需要每个 LevelDB 实例都进行遍历，效率也不高。LG 是一种折中方案，并且属于一个 LG 的列可以进行集中优化（比如：根据业务数据特点，相似数据的列放在一起可以提高压缩比例，再比如经常访问列放在一起可以放入内存优化等）。
 
 
 
@@ -130,7 +132,7 @@ kick：Master 在一些异常情况下 会认为节点故障，对其进行KickO
 4. /tera/root_table 被创建，设置root_table信息（ip:port）到内存。
 5. /tera/root_table 变更，更新内存中root_table的信息。
 6. /tera/ts/ 下自身注册的节点被删除，关闭 zk 链接，重连。
-7. /tera/kick/ 下自身的节点被创建，删除相应节点。
+7. /tera/kick/ 下自身的节点被创建，删除相应节点，并退出程序。
 
 
 

@@ -72,10 +72,11 @@ Tera 对LevelDB 进行了一些改动目的是支持系统的设计需求，上�
 1. 增加 DBTable 类继承DB，DBTable是对tablet的抽象，DBTable内部封装了DBImpl，DBImpl对lg进行抽象。
 2. OpenDB 进行了改动，支持 Spilt Tablet、Merge Tablet（如果 option 有 parent_tablet 参数，说明是 Spilt（1个parent_tablet） 或者 Merge（2个parent_tablet））。
 3. DBImpl 的压缩进行改动，引入压缩策略，在压缩过程删除各种类型的 Key（例如：TKT_DEL_QUALIFIER、TKT_DEL_QUALIFIERS、TKT_DEL_COLUMN、TKT_DEL、版本号等）。
-4. 支持多线程Compact（默认8个线程）。
-5. 对ENV进行继承，支持多套环境，包括HDFS、AFS（百度自研）、Local等（本系列关注HDFS）。
-6. 增加PersistentCache，利用本地SSD磁盘缓存 SST 文件。
-7. TableNode 读 DFS 线程数目限制。
+4. 支持多线程Compact（默认8个线程），并且不会删除 SST 文件，由 Master 在 GC 阶段协调删除数据。
+5. Tablet 公用一个 wal 日志文件，既所有的 LG 公用一个（所以 Spilt、Merge 要等 wal 消耗完才能进行，并没有像 BigTable 对日志进行排序优化）。
+6. 对ENV进行继承，支持多套环境，包括HDFS、AFS（百度自研）、Local等（本系列关注HDFS）。
+7. 增加PersistentCache，利用本地SSD磁盘缓存 SST 文件。
+8. TableNode 读 DFS 线程数目限制。
 
 
 

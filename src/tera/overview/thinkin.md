@@ -150,7 +150,83 @@ ZK 自身实现的类 Paxos 算法比较重，维护起来比较困难，加上 
 
 ### Q&A
 
+一下问题均来自 Tera 的说明文档，应该是内部同学串讲的问题，在这里根据对系统的学习和线上实际情况进行解答，目的是更好地理解 Tera。
 
+1. locality group的作用？
+
+   LG 主要是根据业务需要进行制定，业务可以从一下几方面进行考量：
+
+   1. LG 对应一个 LevelDB 实例，合理设置 LG、CF、QUA 从属关系，对于经常一起读的列放在一个 LevelDB 实例内，可以提高读性能。
+   2. 可以根据 LG 指定存储介质，提高性能。
+   3. LG 的压缩算法也可以指定，根据数据特点提高压缩比。
+
+2. master在gc时怎么知道哪些数据可以删除？
+
+   1. 通过 DFS 获取磁盘有哪些 Tablet，对于不用的 Tablet（与内存中 Ready 的相对比）。
+   2. 对于不用的 Tablet 删除所有文件，除 SST 文件（Spilt、Merge 可能还在用）。
+   3. 通过 HB 收集上来的 Tablet 还在使用的 SST 集合，与其进行对比，将步骤 2 中的 SST 文件集合进行对比，获取到真正不用的 SST 文件。
+   4. 将真正不用的 SST 移到 Trash 目录。
+
+3. 性能相关（读写瓶颈、io/cpu/mem等资源细节、zk和hdfs压力、各类cache等等）？
+
+   1. 写瓶颈：与 DFS 交互的操作（写日志文件，immutable memtable写sst文件，compact操作）。
+   2. zk：Clinet 缓存 MetaTable（地址和数据）、Table的一些元数据等。
+   3. HDFS：批量写、限流（HDFS 客户端缓存元数据，还未做）。
+   4. Cache：主要是消耗在 TableCahce、BlockCache。
+   5. 系统资源：DFS 主要是网络IO、CPU主要是扫描。
+
+4. 一致性保证（master的mem与meta；ts与tablet）？
+
+   1. master的mem与meta，如上所述。
+   2. ts与tablet，用户只有写 DFS 返回才返回给客户端，其次 Tablet 是单副本，最后 TableNode 利用了 SST 文件的不变性，没有一致性的问题。
+
+5. client读写时如何寻找对应ts？
+
+   1. Client -> zk -> MetaTablet -> UserTablet
+
+6. tera的读操作在leveldb中的流程？
+
+   1. seek 到行首，进行遍历 Cell，读到有效数据。
+   2. RawKey 中 type 为 TKT_FORSEEK 会seek 到行首，因为 TKT_FORSEEK = 0；
+
+7. ts挂掉一台后，上面的tablet多久能够恢复服务（ts挂掉的，tera内部的流程）？
+
+   1. Master 最多 10s （tera_zk_timeout） Watch 到，TabletNode 与 ZK 的超时时间 tera_zk_timeout。
+   2. Master等待60（tera_master_tabletnode_timeout）秒，进行分配。
+   3. 当正在load的tablet大于或等于5（tera_master_max_load_concurrency）个时，剩下的tablet就要排队了。
+   4. 结论：至少分钟级恢复，Tablet 越多恢复越慢，不让更多的 Tablet 同时迁移，主要是考虑对 DFS 的压力。
+
+8. bloomfilter加载到内存是在什么时刻进行的，数据特别多时内存不够用怎么办？
+
+   1. TableCahce 管理 bloomfilter，打开 SST 文件时加载。
+   2. TableCahce 根据 LRU 淘汰。
+
+9. 一致性如何保证，即如何保证一个区间只由一个ts提供服务（例如load超时）？
+
+   1. Load 失败，会进行 Move。
+
+10. 如何踢掉ts?
+
+    1. ts监听自己在zk节点的变化事件；
+    2. master把ts在zk的节点移动到kick目录；
+    3. ts发现自己被移到kick了，就主动退出服务；
+    4. ts先打印一行日志，然后以FATAL错误的方式退出，所以不存在因某种原因卡住而没有及时退出的问题；
+
+11. 何时使用kv存储，何时使用表格模型存储？
+
+    1. 随机读、扫描等简单操作的性能会明显优于表格模式，cpu的利用效率也会更高（前面介绍过）。
+    2. 优先 KV 存储。
+
+12. 表格存在明显的读写热点情况如何处理？
+
+    1. 如果热点不是非常集中的情况下，可以将对应tablet进行拆分，分散压力。
+    2. 读热点，极端情况下，可能一行的读取压力（每秒数万以上）将cpu占满，此时需要客户端进行适当缓存。
+    3. 写热点，开启内存compact功能，可大幅提升写性能。
+
+13. 按某一列进行扫描时，cpu消耗很高，而且速度很慢？
+
+    1. 当某表列很多时，只扫描其中一列，会将所有列数据扫描一遍，速度会很慢，cpu也会消耗很高。
+    2. 此时可以针对不同列的扫描需求，将不同列拆分至不同Locality Groups，进行IO隔离，扫描时访问所需列数据，节省资源，提高性能。
 
 
 
