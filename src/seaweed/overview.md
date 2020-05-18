@@ -52,7 +52,7 @@ volume中没有使用任何存储引擎，所有的写都是追加写，删除�
 
 ##### weed_shell
 
-以上介绍的是seaweed的核心模块逻辑，但是这个系统在一些容错场景下并不是完美的，作者提供了一些外围的工具进行补偿，命令很多选了一下几个比较重要（影响数据可靠性、可用性的场景或者说运维使用较多的命令）进行一下介绍：
+以上介绍的是seaweed的核心模块逻辑，但是这个系统在一些容错场景下并不是完美的，作者提供了一些外围的工具进行补偿，命令很多选了一下几个比较重要（影响数据可靠性、可用性的场景或者说运维使用较多的命令）进行以下介绍：
 
 1. [balance](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/weed_shell/balance.md)
 2. [replication fix](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/weed_shell/fix_replication.md)
