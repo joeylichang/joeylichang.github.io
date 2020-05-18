@@ -1,6 +1,6 @@
 # Assign
 
-Assign请求的作用是想master申请fid，有两种接口 既http，grpc，其逻辑是相同（一下源码以grpc接口开始讲解）。
+Assign请求的作用是想master申请fid，有两种接口 既http，grpc，其逻辑是相同（以下源码以grpc接口开始讲解）。
 
 ## 参数
 
