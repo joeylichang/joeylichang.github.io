@@ -9,7 +9,7 @@ type AssignRequest struct {
 	Count              uint64 		// 申请的fid个数
 	Replication        string 		// 副本策略
 	Collection         string 		// collection名，可以为空
-	Ttl                string 		// 又是时长
+	Ttl                string 		// 存活时长
 	DataCenter         string 		
 	Rack               string 
 	DataNode           string 
