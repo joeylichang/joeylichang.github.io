@@ -25,7 +25,7 @@ func (t *Topology) StartRefreshWritableVolumes(grpcDialOption grpc.DialOption, g
 		}
 	}(garbageThreshold)
   
-  	// 上面CollectDeadNodeAndFullVolumes扫描全量的volume，返现满的会通过chan到这里
+  	// 上面CollectDeadNodeAndFullVolumes扫描全量的volume，发现满的会通过chan到这里
 	go func() {
 		for {
 			select {
