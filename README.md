@@ -27,7 +27,7 @@
 	* [storage layer design](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_kv.md)
 	* [distributed transaction](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/cockroachdb/desgin_transaction.md)
 * **SeaweedFS**
-	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
+	* [overview && think in](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md)
 	* data organization
 		* [master meta data](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/master/tupo/tupo.md)
 		* [volume data organ](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
