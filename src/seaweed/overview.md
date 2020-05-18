@@ -112,7 +112,7 @@ VolumeService 和 Alloc 目的是为了分担 master 的压力，如果还是单
 
 * Repair-Cluster
 
-Rebalance、Replicat完整性、Volume内数据一致性检验与等工作可以有一个单独的模块（Repair）进行处理。Rebalance可以周期性检查并搬迁（需要考虑流控，任务均衡等细节）。Replicat的完整性同样可以Repair周期检查并执行。
+Rebalance、Replicat完整性、Volume内数据一致性检验等工作可以由一个单独的模块（Repair）进行处理。Rebalance可以周期性检查并搬迁（需要考虑流控，任务均衡等细节）。Replicat的完整性同样可以Repair周期检查并执行。
 
 Volume内数据一致性，可以扫描Replicate内副本的Needle比较是否一致，如果不一致查询客户端存储fid的系统判断该实数是否被用户删除，决定删除或者补偿数据。
 
