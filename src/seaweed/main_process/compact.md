@@ -13,7 +13,7 @@ seaweed的数据删除是标记删除，既在索引文件中设置一个tombsto
    2. 如果batchVacuumVolumeCompact执行成功，继续执行batchVacuumVolumeCommit
    3. 否则执行batchVacuumVolumeCleanup。
 
-##源码
+## 源码
 
 下面重点看一下batchVacuumVolumeCheck、batchVacuumVolumeCompact、batchVacuumVolumeCommit、batchVacuumVolumeCleanup的逻辑和volume_server的交互。
 
