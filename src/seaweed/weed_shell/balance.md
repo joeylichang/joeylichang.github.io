@@ -25,5 +25,5 @@ volume.balance [-c ALL|EACH_COLLECTION|<collection_name>] [-force] [-dataCenter=
 
 #### 问题
 
-balance值针对副本不足的情况作了处理，但是对于副本对于的情况没有处理，move的逻辑在copy成功之后（已经mount）但是tail失败之后没有删除目标节点的volume的逻辑可能造成副本对于（可能作者的意思是需要手动调用shell的unmount的逻辑，但是也没有删除文件）。
+balance值针对副本不足的情况作了处理，但是对于副本多余的情况没有处理，move的逻辑在copy成功之后（已经mount）但是tail失败之后没有删除目标节点的volume的逻辑可能造成副本多余（可能作者的意思是需要手动调用shell的unmount的逻辑，但是也没有删除文件）。
 
