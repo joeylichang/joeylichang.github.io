@@ -33,13 +33,13 @@ volume_server一个进程对应一个Store，一个Store对应多个DiskLoction�
 
 ##### main_process
 
-存储系统最基本的操作是读写删除操作，seaweed的写和删除是强一致，既删除主节点数据之后向从节点同步，所有从节点的删除都成功之后才算成功，否则更新失败。
+存储系统最基本的操作是读写删除操作，seaweed的写和删除是强一致，既删除主节点数据之后向从节点同步，所有从节点的更新都成功之后才算成功，否则更新失败。
 
 seaweed的读写都需要与master交互，写操作时向master申请fid，fid有三部分组成：volumeId + 全局递增序列号 + cookie，申请fid的结果会返回vid所在的主节点的地址，client向主节点发起写请求。读请求会像master查询fid对应的volume的分布，client收到一个volume_server的列表。
 
-除了读写操作seaweed的心跳汇报也是值得重点介绍的，seaweed分配fid的全局递增id是不落盘的，这样一旦三个master都重启（当然概率会更小）必须保证master收到了所有volume_server的心跳，因为心跳会汇报其最大的fid，这样才能不正后续不重复。再或者用户在申请fid之后串改了中间递增id会使得fid有一定概率重复。
+除了读写操作seaweed的心跳汇报也是值得重点介绍的，seaweed分配fid的全局递增id是不落盘的，这样一旦三个master都重启（当然概率会很小）必须保证master收到了所有volume_server的心跳，因为心跳会汇报其最大的fid，这样才能保证后续不重复。再或者用户在申请fid之后串改了中间递增id会使得fid有一定概率重复。
 
-volume中没有使用任何存储引擎，所有的写都是追加写，删除是标记删除，如果删除的较多会造成空洞造成空间浪费，seaweed的解决方案是compact。
+volume中没有使用任何存储引擎，所有的写都是追加写，删除是标记删除，如果删除的较多会有空洞造成空间浪费，seaweed的解决方案是compact。
 
 本系列针对seaweed主要的流程做一下几部分的介绍：
 
