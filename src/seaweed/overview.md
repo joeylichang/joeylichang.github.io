@@ -33,7 +33,7 @@ volume_server一个进程对应一个Store，一个Store对应多个DiskLoction�
 
 ##### main_process
 
-存储系统最近本的操作是读写删除操作，seaweed的写和删除是强一致，既删除主节点数据之后向从节点同步，所有从节点的删除都成功之后才算成功，否则更新失败。
+存储系统最基本的操作是读写删除操作，seaweed的写和删除是强一致，既删除主节点数据之后向从节点同步，所有从节点的删除都成功之后才算成功，否则更新失败。
 
 seaweed的读写都需要与master交互，写操作时向master申请fid，fid有三部分组成：volumeId + 全局递增序列号 + cookie，申请fid的结果会返回vid所在的主节点的地址，client向主节点发起写请求。读请求会像master查询fid对应的volume的分布，client收到一个volume_server的列表。
 
