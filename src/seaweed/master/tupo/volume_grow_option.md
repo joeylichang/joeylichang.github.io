@@ -43,4 +43,4 @@ func (vg *VolumeGrowth) grow(grpcDialOption grpc.DialOption, topo *Topology, vid
 
 ```
 
-调用assign接口事会调用AutomaticGrowByType（后续介绍）。调用链关系：AutomaticGrowByType -> GrowByCountAndType -> findAndGrow -> findEmptySlotsForOneVolume / grow。
+调用assign接口时会调用AutomaticGrowByType（后续介绍）。调用链关系：AutomaticGrowByType -> GrowByCountAndType -> findAndGrow -> findEmptySlotsForOneVolume / grow。
