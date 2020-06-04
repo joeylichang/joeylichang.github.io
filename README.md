@@ -33,7 +33,7 @@
 			* [volume data organ](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
 		* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#main_process)
 		* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
-	* [optimize design scheme]()
+	* [optimize design overview]()
 		* [repair cluster desgin]()
 		* [alloc cluster desgin]()
 		* [volume service desgin]()
