@@ -34,10 +34,10 @@
 		* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#main_process)
 		* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
 	* [optimize design overview]()
-		* [repair cluster desgin]()
 		* [alloc cluster desgin]()
 		* [volume service desgin]()
-		* [source optimize design]()
+		* [repair cluster desgin]()
+		* [experience sharing]()
 * **Tera**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
 	* [master introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md)
