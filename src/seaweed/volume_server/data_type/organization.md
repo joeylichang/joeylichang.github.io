@@ -18,3 +18,9 @@ LevelDbNeedleMap又分为三种类型。NeedleMapLevelDb、NeedleMapLevelDbMediu
 
 NeedleMap 分位两种，CompactMap 和 MemDb，前者是默认的内存数据结构用于存储索引，后者主要是加载只读 Volume 时，一种纯内存的 LevelDB，目的是加载数据的读取。
 
+##### 注意
+
+基于 LevelDB 的索引，也是有 idx 文件的（与 LevelDB 的 wal 功能重复）。个人认为出于 copy、compact 代码复用的原因，copy 和 compact 都是基于 idx 读取源文件然后构建数据，levledb 是引入（节省内存）为了方便复用之前的copy 和 compact 逻辑，造成了上述情况，会多一次写盘（大多数情况下，对象或者小文件存储的性能要求不高）。
+
+在 copy 之后需要进行的 mount 操作和 compact 提交之后，都会调用 volume 的 load 接口，该接口内部会根据 volume 配置的索引类型进行加载。
+
