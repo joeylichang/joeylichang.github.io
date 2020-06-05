@@ -12,7 +12,9 @@
 
 [Needle](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/needle.md)：对应一条用户的存储数据，一个volume包含多个Needle。
 
-[NeedleMapper](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/needle_mapper.md)：对应一个索引文件有两种类型，既全部索引信息映射到内存（NeedleMap，.idx文件）、LevelDB（LevelDbNeedleMap，.ldb文件）。
+[NeedleMapper](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/needle_mapper.md)：对应一个索引文件有两种类型，既全部索引信息映射到内存（NeedleMap，.idx文件）、LevelDB（LevelDbNeedleMap，.ldb目录）。
 
 LevelDbNeedleMap又分为三种类型。NeedleMapLevelDb、NeedleMapLevelDbMedium、NeedleMapLevelDbLarge，三种类型的区别在于LevelDB的配置参数不同包括：memtable大小、缓存大小、每层sst文件总大小（leveldb压缩 与 性能之间的权衡）。
+
+NeedleMap 分位两种，CompactMap 和 MemDb，前者是默认的内存数据结构用于存储索引，后者主要是加载只读 Volume 时，一种纯内存的 LevelDB，目的是加载数据的读取。
 

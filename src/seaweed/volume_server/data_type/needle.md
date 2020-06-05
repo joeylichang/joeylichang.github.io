@@ -2,7 +2,7 @@
 
 ```go
 /* 上传数据时http参数执行下面的变量值
- * Cookie 是一个校验值，防止共计
+ * Cookie 是一个校验值，防止攻击
  */
 type Needle struct {
 	Cookie Cookie   `comment:"random number to mitigate brute force lookups"`

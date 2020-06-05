@@ -23,6 +23,17 @@ type NeedleMap struct {
 	m needle_map.NeedleValueMap
 }
 
+// NeedleValueMap 的实现之一
+//This map assumes mostly inserting increasing keys
+type CompactMap struct {
+	list []*CompactSection
+}
+
+// NeedleValueMap 的实现之一（用于只读加速）
+type MemDb struct {
+	db *leveldb.DB
+}
+
 // leveldb map
 type LevelDbNeedleMap struct {
 	baseNeedleMapper
