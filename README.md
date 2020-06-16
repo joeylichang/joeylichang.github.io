@@ -33,10 +33,9 @@
 			* [volume data organ](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/volume_server/data_type/organization.md)
 		* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#main_process)
 		* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
-	* [optimize design overview]()
-		* [alloc cluster desgin]()
-		* [volume service desgin]()
-		* [repair cluster desgin]()
+	* [optimize design overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/opt_design_overview.md)
+		* [repair-cluster desgin]()
+		* [alloc-cluster && volume-service desgin]()
 		* [experience sharing]()
 * **Tera**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
