@@ -34,7 +34,7 @@
 		* [main process](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#main_process)
 		* [shell tool](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/overview.md#weed_shell)
 	* [optimize design overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/opt_design_overview.md)
-		* [repair-cluster desgin]()
+		* [repair-cluster desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/repair.md)
 		* [alloc-cluster && volume-service desgin]()
 		* [experience sharing]()
 * **Tera**
