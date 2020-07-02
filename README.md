@@ -36,7 +36,7 @@
 	* [optimize design overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/opt_design_overview.md)
 		* [repair-cluster desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/repair.md)
 		* [alloc-cluster && volume-service desgin]()
-		* [experience sharing]()
+		* [experience sharing](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/experience_sharing.md)
 * **Tera**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
 	* [master introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md)
