@@ -20,6 +20,20 @@
 
 ​								|_.tracker.bin（dataUpdateTracker）boolmfilter 的数据
 
+​			|_${bucket_name}
+
+​						|_${object_name}
+
+​								|_part.1
+
+​								|_xl.json
+
+​						|_${object_name} 	（mutliobject）
+
+​								|_part.1/part.2……
+
+​								|_xl.json
+
 
 
 |_cachepath

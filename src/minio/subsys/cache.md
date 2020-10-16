@@ -7,7 +7,7 @@ Cache 是在 Zone 上面的一层缓存，在http handler 中调用 Cache 的 AP
 1. 跨节点缓存：min.io 架构中所有节点都是对等的，请求可以打到任意节点，而且缓存都是本地缓存没有跨节点交互，所以一份数据可以被缓存在多个节点上（只要节点满足同一份数据被访问一定次数就会被在本地缓存），甚至缓存的节点上面没有相关对象的任何数据，会存在多分缓存数据不一致的问题，cache 的失效时间（用户自定义）在这里起到了至关重要的作用。
 2. 接口：Cache 支持六个接口，PutObject（写元数据和数据）、GetObjectInfo（读取元数据）、GetObjectNInfo（读取数据和元数据）、CopyObject、DeleteObject、DeleteObjects。重点是前三个接口，PutObject、GetObjectNInfo 读取了真正的数据进行 cache hit or miss 的更新。
 3. 分布式锁：PutObject、GetObjectNInfo 读取数据之前同样会获取全局的分布式锁才能进行操作，保证了操作的原子性，这部分与 zone 部分的逻辑保持一致，不至于操作期间数据有变化，与zone层的数据操作语义保持一致。
-4. 介质：Cache 与 普通数据盘相比如果介质上有较好的提升，性能会有较多的提升，如果介质一样，与没有cache相比节省了 EC 编码和网络请求时间。
+4. 介质：Cache 与 普通数据盘相比如果介质上有较好的提升，性能会有较多的提升，如果介质一样，与没有cache相比节省了 RS 编码和网络请求时间。
 
 
 

@@ -2,7 +2,7 @@
 
 ##### 介绍
 
-min.io 数据恢复是数据（Object）级别的数据修复，由于使用的 EC 编码的方式，所以没有副本修复（Set 间采用 Hash 分配 Objet，也没有容量负载均衡的逻辑）。
+min.io 数据恢复是数据（Object）级别的数据修复，由于使用的 RS 编码的方式，所以没有副本修复（Set 间采用 Hash 分配 Objet，也没有容量负载均衡的逻辑）。
 
 ###### 分层架构
 
@@ -21,7 +21,7 @@ min.io 数据恢复是数据（Object）级别的数据修复，由于使用的 
 **注意：**
 
 1. 全量数据修复应该是考虑避免重复修复，必须保证单点执行。
-2. formate.json 不是ec 编码，且是集群拓扑信息（EC 编码、Zone、Set等）重要的元数据，有必要进行修复。
+2. formate.json 不是 RS 编码，且是集群拓扑信息（RS 编码、Zone、Set等）重要的元数据，有必要进行修复。
 
 
 
@@ -204,7 +204,7 @@ LaunchNewHealSequence 内部会调用 globalBackgroundHealState.healSequenceStar
    2. 遍历全部的 buckets。
    3. 调用 xlstorage 的 WalkVersions 接口，将想用目录下面所有的文件（递归）组织成 FileInfoVersion 接口。
    4. 拿到所有 EC 分块数量的目录子项信息（FileInfoVersion）进行比对（是否有文件缺失等）。
-   5. 如果获取的文件 EC 编码数量少于全量的 EC 分块数量，则组织成healSource（见前面介绍），传入 healSequence.sourceCh 待后台进行修复。
+   5. 如果获取的文件 RS 编码数量少于全量的 EC 分块数量，则组织成healSource（见前面介绍），传入 healSequence.sourceCh 待后台进行修复。
 
 **注意：newBgHealSequence 和 初始化后台数据修复任务，不仅仅是主节点（只有全量数据扫描是主节点），其他节点也会初始化。**
 
@@ -250,4 +250,4 @@ LaunchNewHealSequence 内部会调用 globalBackgroundHealState.healSequenceStar
 3. 获取全部磁盘上 bucket/object/xl.meta 上的最后修改时间
    1. 如果最新的修改时间少于一般，则故障，此时返回 err
    2. 如果返回的结果全部是错误，则删除对象（根据传入参数，remove 是否为 true）
-4. 到此，少于一半磁盘获取最后修改时间有问题，此时进行 对象修复（EC 编码修复）。
+4. 到此，少于一半磁盘获取最后修改时间有问题，此时进行 对象修复（RS 编码修复）。

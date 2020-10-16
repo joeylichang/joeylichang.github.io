@@ -57,7 +57,7 @@ type dataUsageCache struct {
 }
 ```
 
-上面介绍的 dataUsageCache 正是 DataCrawler 收集的数据并且通过正常的用户端接口（EC 编码）写入到 /diskpath/.minio.sys/buckets/.usage.json 。
+上面介绍的 dataUsageCache 正是 DataCrawler 收集的数据并且通过正常的用户端接口（RS 编码）写入到 /diskpath/.minio.sys/buckets/.usage.json 。
 
 在正是介绍 DataCrawler 之前需要明确以下即可对象存储的数据和作用（全部使用用户接口，EC编码写入集群）：
 
@@ -88,7 +88,7 @@ min.io 启动阶段完成所有的子系统初始化之后，会调用 startBack
    1. 通过 Notification 子系统通知所有节点更新 boolmfilter （新的 boolmfilter 编号为 nextBloomCycle）。
    2. 调用 zone 的 CrawlAndGetDataUsage 接口收集数据，收集的数据通过管道传给另一个后台协程（storeDataUsageInBackend）写入 /diskpath/.minio.sys/buckets/.usage.json 对象内部。
       1. **注意：CrawlAndGetDataUsage 是一个漫长的过程，每次都是收集上来一部分新的数据覆盖旧的数据（dataUsageCache），然后整体去覆盖 .usage.json 的内容，既storeDataUsageInBackend 内部写入的数据在一个周期内总是一部分是新的一部分数上个周期的，是一个持续的动态过程。**
-      2. storeDataUsageInBackend 协程内部等待管道的数据（dataUsageCache），进行序列化然后调用用户接口进行 EC 编码写入 .usage.json 对象。
+      2. storeDataUsageInBackend 协程内部等待管道的数据（dataUsageCache），进行序列化然后调用用户接口进行 RS 编码写入 .usage.json 对象。
    3. nextBloomCycle ++，写入 /diskpath/.minio.sys/buckets/.bloomcycle.bin 待下次重启使用。
 
    
