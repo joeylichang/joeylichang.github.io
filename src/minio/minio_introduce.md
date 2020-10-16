@@ -94,6 +94,8 @@ Min.IO 在设计之初的目标之一（除了极简主义）就是高度兼容 
 
 ![minio_code_arch](../../images/minio_code_arch.png)
 
+
+
 ##### 接口层
 
 Min.IO Server 的代码架构如上图所示。最上面一层是 http 层，既接口，包括客户端与集群节点、集群内节点间的通信接口，分为6大类（角色权限管理、S3 接口、S3 各种子系统配置等）共计 171个接口（后面会重点介绍读写删除）。在接口层接收到请求之后，以 S3 的用户接口为例，都会有签名验证、权限管理验证、加解密、Quota（写类接口）、压缩等逻辑（会设计相应的配置子系统和子模块）。在真正存储数据之前，数据会先经过 [DiskCache](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/cache.md) 缓存。
@@ -113,6 +115,8 @@ xlStorage 对应一块磁盘，所有涉及文件等磁盘的操作都是由 xlS
 erasureZones、erasureSets、erasureObjects、xlStorage 的对应抽象关系如下：
 
 ![minio_erasure](../../images/minio_erasure.png)
+
+
 
 ##### 子系统
 
