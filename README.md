@@ -37,6 +37,9 @@
 		* [repair-cluster desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/repair.md)
 		* [alloc-cluster && volume-service desgin](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/alloc_read.md)
 		* [experience sharing](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/seaweed/opt/experience_sharing.md)
+* **Min.IO**
+	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/minio_introduce.md)
+	* [thinkin]()
 * **Tera**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
 	* [master introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md)
