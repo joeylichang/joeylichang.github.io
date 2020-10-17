@@ -142,11 +142,175 @@ erasureZones、erasureSets、erasureObjects、xlStorage 的对应抽象关系如
 
 ### 参数解析
 
+MIn.IO 最基本的设计理念是极简，在启动参数上也是尽量简化。简化的参数带来的问题是不够灵活（供给用户通过参数控制集群的自由度比较低），因为很多计算逻辑都是由程序计算出来，这个计算过程有很多约束（极简理念不希望集群过于复杂），导致刚接触时对于集群参数对集群部署的影响比较迷惑（也是文档不够全面，社区不够活跃导致），例如：只有在带有 {……} 模式的启动参数才能进行 erasureZones 的扩展，如果只是单纯的罗列host:dir 是无法进行后期分布式集群扩展的。在刚接触 Min.IO 集群部署时都是尝试（相关文档不多，有的也只是单分布式集群的皮毛）， 所以这部分就是从源码的角度彻底揭开参数解析与集群部署的迷惑。
+
+
+
+##### 集群部署模式及其参数
+
+首先，需要了解 Min.IO 部署模式及其相应的参数，然后针对我们重点关注的可扩展分布式集群模式进行深入剖析。
+
+* FSSetupType
+
+  1. 单机模式，启动参数 minio server ${diskpath}
+  2. 只有一个参数 ${diskpath} 不可以多于一个
+
+* ErasureSetupType
+
+  1. 分布式模式，启动参数 minio server ${dir} ……
+  2. 与单机模式相比，参数中没有host，只有dir，且多于一个
+
+* DistErasureSetupType
+
+  1. 可扩展分布式模式，启动参数 minio server http://host{1...32}/export{1...32} ……
+  2. 扩展时，第一个参数不变，后面加上新加的新群参数即可
+  3. 与普通的分布式模式相比，参数中需要带有 {……} 模式
+  4. 必须多于两台机器
+  5. 同一个目录，不能被同一台机器多个 port （进程）的共用。
+
+* GatewaySetupType
+
+  Min.IO 作为 S3 的代理，而非存储节点，非本系列重点。
+
+**注意**：
+
+1. 要么所有的参数（按空格划分参数）都没有 {...}，要么每一个都得有 {...}
+2. 内部创建 endpoints（host:dir） 是会要求所有的 endpoint 类型（是否是url类型 ）相同，否则启动失败
+3. 
+
+
+
+##### 可扩展分布式集群部署结论
+
+本系列文章主要关注 DistErasureSetupType 类型的集群部署方式，下面对一些重点的结论进行总结，具体的程序解析逻辑在下一部分介绍。
+
+1. 启动参数中必须带有 {……} 模式，要么是 host 带有，要么是 dir 带有
+   1. 一个参数（带有 {……}  ）在解析的时候对应一个 erasureZones，通过参数重启达到扩展集群的目的。
+   2. 如果所有参数都没有的话，在解析过程中会被认为在同一个 erasureZones，在扩展之后，erasureSets 变多，需要数据进行重新 rehash，但是 Min.IO 的极简设计理念有意的避开了数据rehash，正式在参数这层做了约束。
+   3. 如果是多个其从参数，必须全部带有  {……}，否则在解析时会认为，是没有 {……} 进行解析，后面也会报错退出。
+2. 多个参数之间 host 数目 和 dir 数目可以不一致，但是经过计算的纠删码分组必须一致
+   1. 所有的 zone，根据参数计算的 EC 编码块数 和 启动模式（单机、EC、DisEC）必须相同
+   2. 但是一个参数内的机器上的 dir 必须是同构的，否则无法组成类似 export{1...32} 的模式
+   3. 是否是来自不同的磁盘？还是只是目录不同就行？（有一块能看到）
+
+
+
+##### 参数解析原理解析
+
+1. 内部循环所有的输入参数，既每个 zone 的参数
+
+   1. 例如： minio server http://host{1...32}/export{1...32}  http://host{33...64}/export{1...32}， 需要循环两次
+
+2. 循环内调用 GetAllSets ，完成 RS 编码分块数量的计算，以及 <host, dir> 的分组（分几组，每组内部的路径是什么）
+
+   1. totalSizes = host_num * dir_num
+
+   2. 求 totalSizes 的最大公约数 commonSize，计算备选集 setCounts = 预值 RS 编码分块数量（[4, 16]）能被 commonSize 整除的集合
+
+      1. 如果环境变量设置了 EC 编码的分块数量，此时必须在 setCounts 中，否则启动失败
+      2. 预值 RS 编码分块数量（[4, 16]），是程序内部固定值，既 RS 的分块数量必须是 [4, 16] 区间内的整数
+
+   3. 计算 setCounts2 
+
+      1. 如果 dir 使用了 {...}， 则从 setCounts 中选出整除或者被整除 dir_num 的备选集 setCounts2
+      2. 如果 dir 没有使用 {...}，则只有 host 使用 {...} ，则从 setCounts 中选出整除或者被整除 host_num 的备选集 setCounts2
+      3. 如果 dir 和 host 都使用了 {...}，则用 dir_num
+
+      **注意：核心思想保证 EC 的数据块在磁盘上是均匀分布的**
+
+   4. globalErasureSetDriveCount = max{setCounts2}
+
+   5. 对 <host, dir> 进行分组，根据 EC 编码的分块数量，先遍历 host，在遍历 dir 完成分组
+
+   **举例解析：**
+
+   1. http://host{1...4}/export{1...4}，totalSizes = 16，最大公约数 commonSize = 16
+   2. 在 [4, 16] 中找出能被 commonSize 整除的集合 setCounts = [4, 8, 16]，确定可以进行 RS 分组
+   3. 因为 dir 使用了  {...}，则从 setCounts 中选出整除或者被整除 dir_num 的备选集 setCounts2 = [4, 8, 16]，本步骤的目的是尽量让 dir 分配到不同的分组中
+   4. globalErasureSetDriveCount = max{setCounts2} = 16
+
+   
+
+3. 循环内调用 CreateEndpoints，对 GetAllSets 生成的结果进行处理，然后生成启动模式（FSSetupType、ErasureSetupType、DistErasureSetupType）
+
+   1. 根据 1.2 中生成的分组初始化 endpointlist，对其进行一些约束检查（类型是否一致、checkCrossDeviceMounts等），否则返回err
+   2. setupType 选择
+      1. FSSetupType：host 和 dir 都只有一个
+      2. ErasureSetupType：参数中没有host，只有dir，且多于一个
+      3. DistErasureSetupType
+         1. 参数生成的 endpoints 都是 url 类型
+         2. 同一个dir，没有被同一个host  不同的 port 使用，既 dir 不能夸进程共享
+         3. 可能出现，所有的 endpoints 都是本机的url 类型，此时由于使用了 url 算作是 DistErasureSetupType 
+
+4. 循环内会判断前后两个 zone 参数生成的 EC 编码分块数量 和 SetupType 是否相同，否则返回 error
+
+5.  循环内将生成的 <host, dir> 的分组，既 endpointList 加入 endpointZones
+
+6. 循环外返回， endpointZones，EC 编码分块数，SetupType
+
 
 
 ### 启动流程
 
+Min.IO 内部设计的子系统和接口相对比较多，从程序的入口函数可以整体的把握代码脉络，并且针对这个脉络可以分模块学习，所以有必要从一个较高的视角去审视一下代码。
 
+1. 参数解析 && 全局变量初始化
+
+   1. 主要是 Endpoints（Host:Dir）解析（见上面介绍）
+   2. 环境变量中的配置将会覆盖之前的参数配置值（gobal 参数的设置）
+
+2. 在线升级程序检查、系统资源设置（内存、fd等）
+
+3. Heal 全局变量生成（数据修复的子系统）
+
+   1. globalAllHealState：admin 中 HealHandler 接口使用的 heal 变量
+   2. globalBackgroundHealState：全局后台运行的 heal 模块
+   3. allHealState：详情见[数据修复逻辑](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/heal.md)
+
+4.  http 接口回调的注册，并启动 http 服务
+
+5. ObjectLayer 初始化
+
+   1. ObjectLayer 是 zone、set、object 的抽象，逐层调用（zone、set、object），最后调用 xlstorage 的接口完成数据真正的读写，xlstorage 抽象为 disk，分位本地磁盘和远程磁盘客户端两种，完成本地和分布式的磁盘操作。
+
+6. 生成所有的子系统对象（全局变量）， newAllSubsystems
+
+   1. globalBucketMetadataSys：bucket metadata 管理
+   2. globalNotificationSys
+   3. globalPolicySys
+   4. globalLifecycleSys
+   5. globalBucketSSEConfigSys
+   6. globalBucketObjectLockSys
+   7. globalBucketQuotaSys
+   8. globalBucketVersioningSys
+   9. globalBucketReplicationSys
+   10. globalConfigSys
+   11. globalIAMSys
+
+   详情见[Min.IO 子系统](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/bucket_metadata.md)介绍
+
+7. 启动 background 任务， startBackgroundOps
+
+   1. startBackgroundOps 只有集群 leader 能够执行该部分逻辑
+   2. 数据副本修复：启动 globalBackgroundHealState 后台任务
+   3. DataUsage（目录关系组织的对象大小、磁盘大小等统计信息） 数据统计
+
+8. 所有节点顺序安全的初始化：子系统 ， initSafeMode
+
+   1. 初始化，heal 后端框架（heal_task queue 执行的调度框架）
+   2. 本地磁盘 heal（3min 周期检查）
+      1. 先检查每块磁盘的 format.json 是否异常，不一致之间跳出循环等待下一个 check 周期
+      2. 如果有异常的磁盘对其上全部的数据进行 heal 检查（调用 healset 接口）
+   3. 分布式锁保证所有节点顺序执行，并且一定执行
+      1. 加密配置生成，无限重试等待成功
+      2. 初始化全部的子系统（上述介绍）
+      3. **注意**：为了保证全局锁不过期（默认 2min 过期时间），会周期性的check，获取全局锁失败，则重试，目的是保证所有的节点顺序的执行下面的逻辑
+
+9. 初始化权限系统， startBackgroundIAMLoad
+
+10. 初始化 disk cache for object， newServerCacheObjects
+
+    
 
 ### 主要流程介绍
 
