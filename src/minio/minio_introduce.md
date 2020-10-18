@@ -327,11 +327,11 @@ Min.IO 为了兼容 S3 的接口，实现了较多的 API（6大类 171个接口
 1. 接口层（GetObjectHandler）
 
    1. 签名和权限验证
-      1. 目前 S3 全部（除部分遗留）全部使用 V4 版本的签名，详情见[S3签名]()
-      2. [权限验证]()，根据是否设置了 AccessKey 分为，资源权限验证（policy子系统） 和 用户权限验证（IAM 子系统）
+      1. 目前 S3 全部（除部分遗留）全部使用 V4 版本的签名，详情见[S3签名](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#sign)
+      2. [权限验证](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#acl)，根据是否设置了 AccessKey 分为，资源权限验证（policy子系统） 和 用户权限验证（IAM 子系统）
       3. **注意**： 上述内容更倾向于理解和使用，可以自行查看 S3 官网，Min.IO 完全兼容
    2. 调用 DiskCache 的 GetObjectNInfo 接口获取对象数据和元数据（后面详细介绍）
-   3. 检查是否有[对象锁]()，根据权限配置查看是否可以获取该对象数据
+   3. 检查是否有[对象锁]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#%E7%94%A8%E6%88%B7%E7%BA%A7%E5%AF%B9%E8%B1%A1%E9%94%81](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#用户级对象锁))，根据权限配置查看是否可以获取该对象数据
    4. 判断是否支持加密（默认是支持的），对需要解密的部分进行解密
    5. 进行数据回填（填写返回结果），大数据（需要分块）的处理逻辑（部分信息回调到返回结果），非本部分重点
    6. 返回结果，并且向 Notification 子系统发送通知，如果有 client 关注了该 Bucket 或者 Object 的时间会接收到通知
@@ -387,108 +387,83 @@ Min.IO 为了兼容 S3 的接口，实现了较多的 API（6大类 171个接口
       3. 读取数据
          1. 获取读数据需要的 part，计算方式就是 part 是连续存储的，通过 startoffset 找到 part 的 index 和 其上的offset
          2.  上述这种方式主要是兼容mutilpart，对于正常对象，只有 part.1
-         3. 循环从part 读取数据，直到指定长度，每读取一个 part 的数据进行一次 RS 解码
+         3. 循环从part 读取数据（bitrot 校验），直到指定长度，每读取一个 part 的数据进行一次 RS 解码
          4. 如果解码错误，会进入 deepheal 模块进行修复
 
 
 
 ##### PutObject
 
+1. 接口层
 
+   1. 检查SSE，Min.IO 仅支持 [SSE-C](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/bucket_metadata.md#sseconfig)
+   2. 判断[存储类]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#%E5%AD%98%E5%82%A8%E7%B1%BB](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/other.md#存储类))，Min.IO 仅支持 RRS 和 Standard，但是底层没有任何区分
+   3. 上传数据 MD5 校验，查看数据是否又被篡改
+   4. 获取上传数据长度（头部字段中），S3 最大单次上传的大小是 5T，进行校验
+   5. 如 GetObject 中签名和权限的校验
+   6. [quota](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/bucket_metadata.md#quotaconfig) 校验，查看剩余的容量是超过设定值
+   7. 请求中是否设置了压缩标志，对数据的元数据进行相应的标志设置（取出时涉及到解压）
+   8. 对象锁信息设置到元数据中
+   9. 查看是否设置了加密设置，如果是的话对数据流设置加密
+   10. 调用 cache 层存储，put 数据
+   11. 如果配置了桶[复制](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/bucket_metadata.md#replicationconfig--buckettargetconfig)，则进行数据复制
+   12. 返回结果，并且向 Notification 子系统发送通知，如果有 client 关注了该 Bucket 或者 Object 的时间会接收到通知
 
+2. DiskCache 层
 
+   1. 获取cache disk（同 GetObject 逻辑）
 
+   2. formate 升级ing、cache 磁盘容量不够、需要 SSE、S3语义层带有锁、cache exclude目录
 
+      上述情况都不会写入cache，直接写入走 zone 的接口进行写
 
+   3. 经过上述约束检查之后，同步写入数据磁盘，然后异步写入 cache
 
+3. 存储层
 
+   1. erasureZones 层
 
+      1. 获取 bucket,、object 资源的全局分布式锁
 
+      2. 遍历所有的zone，查找是否有之前对象所在的zone，没有则选择新的
 
+         选择新 zone，考虑容量，引入一定的随机性，随机性与容量相关
 
+   2. erasureSets 层
 
+      1. 对 bucket/object 进行 hash 取模，获取对应的 RS 编码分组序号，然后调用对应分组的  erasureObjects.PutObject 写入数据
 
+   3. erasureObjects 层
 
+      1. 先写数据到临时目录，/diskpath/.minio.sys/tmp/uniqueID(随机ID)/${fi.DataDir}(ID)/part.1
+      2. 写 xl.meta 到临时目录，/diskpath/.minio.sys/tmp/uniqueID(随机ID)/xl.meta
+      3. rename /diskpath/.minio.sys/tmp/uniqueID(随机ID) /diskpath/bucket/object
 
+      **注意：**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      1. 上述流程中写入临时目录需要根据初始化阶段的拓扑信息（formate.json），获取 RS 编码信息，每次写入数据都是 RS 编码之后的数据（xl.meta 是源文件）
+      2. 写入磁盘经过 bitrot 的hash 校验，并且是直接 IO 写入
+      3. 当多数磁盘写入成功，才认为成功
 
 
 
 ##### DeleteObject
 
+1. 接口层
+   1. 如 GetObject 中签名和权限的校验
+   2. 查看对象是否上锁，是的话返回 err
+   3. 调用 cache 层，deleteObject 接口删除数据
+   4. 
+2. DiskCache 层
+   1. 先删除磁盘，删除成功之后
+   2. 获取cache disk（同 GetObject 逻辑）
+   3. 删除 cache 数据
+3. 存储层
+   1. erasureZones 层
+      1. 所里所有的 zone，调用 erasureSets.DeleteObject 删除数据
+   2. erasureSets 层
+      1. 对 bucket/object 进行 hash 取模，获取对应的 RS 编码分组序号，然后调用对应分组的  erasureObjects.DeleteObject 删除数据
+   3. erasureObjects 层
+      1. 未指定版本号删除，只是追加 xl.meta 但是没有删除数据（versionID 随机生成）
+      2. 指定版本号删除，追加 xl.meta 数据，并删除对应的数据，如果是最后一个数据，带Object 目录一起删除
+      3. 多数磁盘删除成功，部分不成功，则交给另外一个模块处理
