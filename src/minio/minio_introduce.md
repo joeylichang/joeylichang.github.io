@@ -12,6 +12,8 @@ Min.IO 支持很多种模式：单机模式、纠删码模式、分布式模式�
 
 ![minio_arch](../../images/minio_arch.png)
 
+
+
 如图所示，Min.IO 的分布式架构是一个去中心的架构，每个节点都是存储节点且对等。请求可以被任意的打到任何节点并完成相应的请求返回给客户端。一般会在集群和用户层之间加一层负载均衡的模块，保证集群内每个节点负责均衡，不会出现过热的节点
 
 Min.IO 的元数据作为数据以对象的形式使用纠删码存储在集群内部，对象数据的读写都会使用分布式锁的方式先加锁再写入，然后再解除锁。分布式锁是 Min.IO 实现的 dsync（min.io/pkg 中的库） 特点是轻量快速易用。分布式锁解决了数据读写一致性的问题，详清见[dist_lock](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/dist_lock.md)。
@@ -94,8 +96,6 @@ Min.IO 在设计之初的目标之一（除了极简主义）就是高度兼容 
 
 ![minio_code_arch](../../images/minio_code_arch.png)
 
-
-
 ##### 接口层
 
 Min.IO Server 的代码架构如上图所示。最上面一层是 http 层，既接口，包括客户端与集群节点、集群内节点间的通信接口，分为6大类（角色权限管理、S3 接口、S3 各种子系统配置等）共计 171个接口（后面会重点介绍读写删除）。在接口层接收到请求之后，以 S3 的用户接口为例，都会有签名验证、权限管理验证、加解密、Quota（写类接口）、压缩等逻辑（会设计相应的配置子系统和子模块）。在真正存储数据之前，数据会先经过 [DiskCache](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/cache.md) 缓存。
@@ -105,6 +105,8 @@ Min.IO Server 的代码架构如上图所示。最上面一层是 http 层，既
 Min.IO 真正的存储层（ObjectLayer）在 DiskCache 之后，存储层类的继承关系如下：
 
 ![minio_objectlayer](../../images/minio_objectlayer.png)
+
+
 
 ObjectLayer 是对外的接口（进程内跨模块调用），FSObjects是本地模式的存储层（非本系列文章介绍重点）。erasureZones 对应真个 Min.IO 集群，既若干个小的分布式集群，erasureSets 对应 erasureZones 中某一个小的分布式集群，Min.IO 集群扩容正是扩充的 erasureSets 。erasureObjects 对应 erasureSets 中某一个 纠删码组，一个 erasureSets 内包含若干个纠删码组（erasureZones、erasureSets、erasureObjects 对应关系与启动参数相关，后面介绍其计算逻辑）。erasureZones、erasureSets、erasureObjects 全部继承自 ObjectLayer 都会继承相应的接口（makeVol等），每层有其各自逻辑然后逐层调用，从而通过一套调用链完成相应的读写等操作。
 
@@ -143,6 +145,8 @@ erasureZones、erasureSets、erasureObjects、xlStorage 的对应抽象关系如
 ### 参数解析
 
 MIn.IO 最基本的设计理念是极简，在启动参数上也是尽量简化。简化的参数带来的问题是不够灵活（供给用户通过参数控制集群的自由度比较低），因为很多计算逻辑都是由程序计算出来，这个计算过程有很多约束（极简理念不希望集群过于复杂），导致刚接触时对于集群参数对集群部署的影响比较迷惑（也是文档不够全面，社区不够活跃导致），例如：只有在带有 {……} 模式的启动参数才能进行 erasureZones 的扩展，如果只是单纯的罗列host:dir 是无法进行后期分布式集群扩展的。在刚接触 Min.IO 集群部署时都是尝试（相关文档不多，有的也只是单分布式集群的皮毛）， 所以这部分就是从源码的角度彻底揭开参数解析与集群部署的迷惑。
+
+根据参数解析的结果，在程序启动阶段利用其初始化存储层的类，在其过程中会生成集群的拓扑信息，作为文件存储在 /diskpath/.minio.sys/format.json，详细介绍见 [format.json](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/formate.md) 。
 
 
 
@@ -314,9 +318,177 @@ Min.IO 内部设计的子系统和接口相对比较多，从程序的入口函�
 
 ### 主要流程介绍
 
+Min.IO 为了兼容 S3 的接口，实现了较多的 API（6大类 171个接口），在这里挑选 读、写、删除 三个接口进项详细介绍。在介绍之前需要对 Min.IO 的目录组织方式先进性一下梳理和了解，方便后续流程的理解，详情见 [目录介绍](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/meta_data/dir_introduce.md)。
+
+
+
 ##### GetObject
 
+1. 接口层（GetObjectHandler）
+
+   1. 签名和权限验证
+      1. 目前 S3 全部（除部分遗留）全部使用 V4 版本的签名，详情见[S3签名]()
+      2. [权限验证]()，根据是否设置了 AccessKey 分为，资源权限验证（policy子系统） 和 用户权限验证（IAM 子系统）
+      3. **注意**： 上述内容更倾向于理解和使用，可以自行查看 S3 官网，Min.IO 完全兼容
+   2. 调用 DiskCache 的 GetObjectNInfo 接口获取对象数据和元数据（后面详细介绍）
+   3. 检查是否有[对象锁]()，根据权限配置查看是否可以获取该对象数据
+   4. 判断是否支持加密（默认是支持的），对需要解密的部分进行解密
+   5. 进行数据回填（填写返回结果），大数据（需要分块）的处理逻辑（部分信息回调到返回结果），非本部分重点
+   6. 返回结果，并且向 Notification 子系统发送通知，如果有 client 关注了该 Bucket 或者 Object 的时间会接收到通知
+
+2. [DiskCache](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/subsys/cache.md) 层
+
+   1. 根据 bucket、obejct 信息获取 cache 的 disk
+
+      1. index = crchash(bucket/object) / len(diskcaches)
+      2. 从 index 开始之后开始找，直到找到 object 在那个 disk ，直接返回
+      3. 没有找到，则是从index 开始第一个 online 的disk
+
+   2. 调用 cache 的 Get 接口获取数据，如果获取到数据
+
+      1. 从用户设置的 UserDefined 信息中获取关于 cache 的设置，例如：max-age、min-fresh 等（详情可以查看上述链接，或者 S3官网），判断是否失效
+
+      2. 如果没有失效，则返回数据，并且更新 cache 的统计信息
+
+      3. 如果 UserDefined 设置了 noStore（表示不设置 cache），直接调用存储层接口并返回
+
+         **注意：**此时可能 cache 返回数据了，但是没有通过 UserDefined 的检测，依然会走下面的逻辑，没有返回
+
+   3. 如果没有在 cache 中获取数据
+
+      1. 调用存储层接口，获取数据（后面详细介绍）
+      2. 如果返回一些可忽略的后端错误（errFaultyDisk等），直接返回 cache 的数据
+      3. 如果返回错误，cache 删除相应数据，并返回 err
+      4. 检查对象锁是否有，是的话直接返回存储层结果
+      5. 更新 cache 数据
+         1. 先检查cache 是否处于高位，如果是的话通知后端清理 cache
+         2. 查询次数大于配置额度（详情见 DiskCahe 部分介绍）
+         3. 检查磁盘是否足够
+         4. 将数据写入 cache（如果数分块的大数据需要单独启动一个协程执行）
+
+3. 存储层
+
+   1. erasureZones 层
+
+      1. 获取 bucket,、object 资源的全局分布式锁
+
+      2. 遍历所有的 zone，调用 erasureSets.GetObjectNInfo 获取数据
+
+         **注意**：扩展 zone 之后，一个读操作会遍历所有的 zone
+
+   2. erasureSets 层
+
+      1. 对 bucket/object 进行 hash 取模，获取对应的 RS 编码分组序号，然后调用对应分组的  erasureObjects.GetObjectNInfo 获取数据
+
+   3. erasureObjects 层
+
+      1. 先判断是否是空对象（只有一个目录，没有数据）
+      2. 根据 bucket/object 读取元数据（并发去读 Set 的所有磁盘的 xl.meta 文件，R > N/2 原则），获取磁盘分布（数据块，加密块等）。
+      3. 读取数据
+         1. 获取读数据需要的 part，计算方式就是 part 是连续存储的，通过 startoffset 找到 part 的 index 和 其上的offset
+         2.  上述这种方式主要是兼容mutilpart，对于正常对象，只有 part.1
+         3. 循环从part 读取数据，直到指定长度，每读取一个 part 的数据进行一次 RS 解码
+         4. 如果解码错误，会进入 deepheal 模块进行修复
+
+
+
 ##### PutObject
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ##### DeleteObject
 
