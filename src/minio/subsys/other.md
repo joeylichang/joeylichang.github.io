@@ -53,18 +53,102 @@
 UserDefine 支持对象保持功能，加上保持的对象只读不写，拒绝覆盖和删除。对象保持针对的是 version，既针对某一个版本进行加保持。
 
 1. 分两种模式（AmzObjectLockMode）
+
    1. governance（X-Amz-Bypass-Governance-Retention）：只有有相应权限的账户可以更新、删除保持，或者被该用户授予相应权限的用户。
    2. Compliance：必须与一个过期保持周期绑定，过期之前任何账户都不能删除，并且保持周期只能延长不能缩短。
+
 2. 保持周期（AmzObjectLockRetainUntilDate）
+
    1. 可以针对 Object 单独设置，也可以使用 Bucket 的默认配置。
    2. 作为元数据存储在 metadata（UserDefine）
+
 3. 合法持有
+
    1. 只要有 s3:PutObjectLegalHold 权限的账户都可以对一个 Object 进行合法持有，持有期间不会被删除和覆盖。
    2. 直到被任何账户（具有上述权限的账户）删除合法持有。
+
 4. **注意：**
+
    1. 合法持有 与 保持周期 是互相平行没有交集的两种机制。
+
    2. 删除合法保持，如果保持周期未到，仍不会被任何用户删除。
+
    3. 同样合法保持设置和删除与 保持周期无关。
+
+      
+
+##### 存储类
+
+S3 支持如下：
+
+1. S3 Standard：默认
+2. RRS：减少冗余度，可能是 EC 编码
+3. S3 Intelligent-Tiering：类似冷热分离存储，智能数据迁移
+4. S3 Standard-IA：访问延时和 Standard 差不多，应该是省钱吧
+5. S3 One Zone-IA ：同上，但是只在一个 zone 内
+6. S3 Glacier：仅保存 90天，restore 1-5 min 之后被检索出来，也是降低成本吧？
+7. S3 Glacier Deep Archive：180天、restore 12小时之后被检索
+   Glacier 是一种归档，需要先 restore，之后才能访问，restore 的时间是 1-5min 和 12 小时
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
