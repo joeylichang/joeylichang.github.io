@@ -40,7 +40,7 @@
 * **Min.IO**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/minio/minio_introduce.md)
 	* [thinkin]()
-* **Tera**
+* **Tera（C++ HBase）**
 	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/overview.md)
 	* [master introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/master_overview.md)
 	* [tabletnode introduce](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/overview/tablenode_overview.md)
