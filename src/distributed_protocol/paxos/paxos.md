@@ -1,12 +1,28 @@
-Ph1.a：Proposer 向所有的 Acceptor 发送 prepare 请求，请求中带有 proposalid（Proposalid 全局唯一，且应该是全局最大）。
+Ph1.a：Proposer 向所有的 Acceptor 发送 prepare 请求，请求中带有 proposalid。
 
 Ph1.b：Acceptor 接收 prepare 请求，如果 prepare 带有的 proposalid 小于等于当前 Acceptor 的 proposealid 则拒绝请求，否则返回 accept 最大的 proposalid 及其 内容。
 
 
 
-Ph2.a：Proposer 收集所有的 prepare 请求，收集多数 acctptor 的返回结果后，选择返回的最大的 proposalid 及其内容作为提案发起 accept 请求，如果内容为空，则使用 Proposer 自身的 proposalid 和内容作为提案。
+Ph2.a：Proposer 收集所有的 prepare 请求，收集多数 Acceptor 的返回结果后，选择返回的最大的 proposalid 及其内容作为提案发起 accept 请求，如果内容为空，则使用 Proposer 自身的 proposalid 和内容作为提案。
 
-Ph2.b：Acceptor 接收到 accept 请求，如果 proposalid 小于自身的 proposalid 则，拒绝请求，否则持久化待 learner 学习，然后返回成功。 Proposer 收集 accept 的结果，如果多数返回成功，则提案提交成功。
+Ph2.b：Acceptor 接收到 accept 请求，如果 proposalid 小于自身的 proposalid 则，拒绝请求，否则持久化待 Learner 学习，然后返回成功。 Proposer 收集 accept 的结果，如果多数返回成功，则提案提交成功。
+
+
+
+上述内容介绍了 Paxos 协议的核心内容，也是协议的精髓。但是在理解层面上还是有疑惑：
+
+1. Acceptor 接收 Proposer 的 accept 请求之后，何时 Learner 去学习它？
+2. 何时 Acceptor 会将学习过的内容清空，便于下一轮提案的正确进行（如果 Learner 学习过了，但是 Acceptor 没删除，Proposer 发起了下一轮的 prepare 请求，让然处理的是未删除的内容，无法开启新的提案）？
+3. 等等……
+
+上述理解上的困惑其实都是来自于学习过程中”脑图方法“需要有一个具体的模型来辅助我们理解。而 Paxos 论文更像是一个抽象的理论，加之 Lamport 晦涩的措词 和 没有具体的实现伪码（与 raft 相比）造成了这些问题。
+
+下面对前一部分介绍的 Paxos 核心协议，做一个 Learner 部分的补充，方便我们后续的理解，这个 Learner 部分的补充是结合 PhxPaxos 的实现。
+
+Ph3.a：Proposer 收集 accept 的返回结果，如果得到多数返回成功。Proposer 向所有的 Learner 发送 learn 请求学习提案内容。
+
+Ph3.b：Learner 接收到 learn 请求之后，更新本地的状态机，并删除 Acceptor（与 Learner 同进程）本轮提案的内容。
 
 
 
@@ -14,6 +30,12 @@ Ph2.b：Acceptor 接收到 accept 请求，如果 proposalid 小于自身的 pro
 
 1. 确定之前的 proposalid 无法确定提案时（所有的 prepare 请求中最大的 proposalid 对应的内容为空，可以认为之前的提案已经确定并处理过了，或者还没有提案），新的 proposalid 提交自己的内容，不会冲突。
 2. 一旦之前的 proposalid 确定了取值（所有的 prepare 请求中最大的 proposalid 对应的内容不为空），新的 proposalid 认同它，不会破坏它。
+
+
+
+Multi-Paxos
+
+前面介绍的数朴素 Paxos，朴素 Paxos 的核心部分每一轮提案都需要 prepare / accept 请求
 
 
 
@@ -138,7 +160,104 @@ Mutl-Paxos 核心思想
 
 PhxPaxos 实现
 
+1. Proposer 发起提案之前的check：CheckNewValue
 
+   1. m_oCommitCtx.IsNewCommit()
+
+      m_oCommitCtx 可以认为是客户端在服务端的抽象，它发起了提案，
+
+      如果其上一个提案没有结束，不能进行新的提案
+
+   2. Learner.InstanceID + 1 >= Learner.m_llHighestSeenInstanceID
+
+      用来判断 learner 是否学习了最新的数据，否则不能开始新的提案
+
+      **这块不是很理解，需要在后面一个提案结束之后一起看一下**
+
+   3. m_oCommitCtx.StartCommit(m_oProposer.GetInstanceID());
+
+      给提案设置 InstanceID，应该是最新的 InstanceID，既前一轮结束之后 ++ 的结果
+
+      这里要多说一点，在 muti-paxos 中：
+
+      1. proposalid 类似 gossip 中的 configepoch 
+      2. InstanceID 类似 gossip 中的 currentepoch
+      3. 每次提案 InstanceID++，只有 主变化时，发起 prepare 请求才更新 proposalid++
+      4. 区别是 proposalid 与 InstanceID 无关 完全是两套单独计数
+
+   4. m_oProposer.NewValue 开始发起 prepare 请求
+
+2. Proposer 发送 prepare 请求：m_oProposer.NewValue/Prepare
+
+   1. 如果 m_oProposerState.GetValue() 为空，设置用户本次提案的内容（也不是最终内容）
+      1. 如果 m_oProposerState 不为空表示之前的提案没有结束，m_oCommitCtx 可能因为异常或者超时被清空了，此时需要继续提交之前的数据
+   2. 设置 prepare 请求参数，然后发送 prepare 请求，有两个参数需要注意 
+      1. InstanceID，既 提案的编号，如前所述是前一个天结束之后 ++
+      2. proposalid，通过一个标志（bool）决定是否 ++
+      3. 当有请求被拒绝、超时等情况会更新这个标志，进而完成proposalid 更新，最后开始重新选主
+
+3. Acceptor 接收 prepare 请求
+
+   1. 加速 learn 逻辑
+
+      **没理解，可能需要后面learn的逻辑补充**
+
+   2. prepare 请求中的 InstanceID == Acceptor 的 InstanceID 表示一个轮次
+
+      1. prepare 请求
+
+         1. 进行投票，有一些需要说明
+
+            Acceptor 内部会记录 Promise ，既他之前选的主，这里会比较 prepare 请求中的 proposalid 与 Promise 的 proposalid，大于等于会投票（注意比较的不是 instanceID， instanceID 在前面校验过了）
+
+         2. Acceptor 会判断当前提案是否被学习并清空，否则会把内容返回去
+
+         3. 处理协议中要求的信息，还会返回一些 proposalid、instanceid 等用于让其他节点看到全局的最大值，方便后面重新选举和优化
+
+      2. accept 请求
+
+         1. 见下面 6 部分
+
+   3. prepare 请求中的 InstanceID > Acceptor 的 InstanceID 表示中间有请求流失，会加入队列等待前面的请求达到然后按顺序执行
+
+   4. repare 请求中的 InstanceID < Acceptor 的 InstanceID，说明这个 InstanceID 的内容已经处理过了，这个请求可能是网络延时导致的，直接忽略即可
+
+4. Proposer 收集 prepare 请求结果
+
+   1. 比较 proposalid 是否相等，既一个主发出去的请求
+   2. 统计投票结果
+      1. 超过半数直接发起 accept 请求
+      2. 否则，发起重试，需要设置一些变量，例如：上述标志位，在写一次 prepare 需要提升 proposalid 等
+      3. 同时会更新一些，全局的信息如上所述：新的 promise-proposalid、instance 等等
+
+5. Proposer 发起 accept 请求
+
+   1. 如协议，根据 prepare 返回结果确定提案内容 发起 accept 请求
+   2. 需要注意的是，一旦 accept 失败将会从 prepare 重新开始
+
+6. Acceptor 接收 accept 请求
+
+   1. 投票逻辑  与 接收 prepare 基本一致
+   2. 需要注意的是，这两部分信息都需要落盘用于重启
+
+7. Proposer 收集 accept 请求结果
+
+   1. 逻辑与收集 prepare 请求结果相同
+   2. 区别是收到半数以上的 accept 向 learner 发起学习
+
+8. Learner 开始学习
+
+   1. 主 Proposer 向所有的 learner 发起了学习请求
+   2. Learner 会校验 InstanceID 是否代表一个轮次
+   3. Learner 会从 Acceptor 中获取投票的 promise 是否与 发起的Proposer 一致
+   4. 交给状态机执行
+
+9. 结束本轮提案
+
+   1. 每个节点执行之后会执行 NewInstance();
+      1. Proposer、Acceptor、Learn中的InstanceID++
+      2. AcceptorState、ProposerState、LearnerState中的数据、投票信息都会清空
+      3. 所以理想情况下Proposer、Acceptor、Learn中的InstanceID应该是一致的
 
 
 
