@@ -3,7 +3,7 @@
 *  **[Overview of NoSQL distributed systems](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/nosql_desigin/nosql_distributed_systems_desgin.md)**
 
 * **Distributed protocol**
-	* Paxos ([PhxPaxos](https://blog.csdn.net/weixin_41713182/article/details/88147487))
+	* Paxos ([PhxPaxos](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/paxos/paxos.md))
 	* Raft ([braft](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/raft/overview.md))
 	* Gossip ([RedisCluster](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/distributed_protocol/gossip/overview.md))
 * **RPC**
