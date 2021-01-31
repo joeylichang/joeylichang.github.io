@@ -127,7 +127,13 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
 
 除此之外 PhxPaxos 还进行了一下工程优化：
 
-1. 
+1. 使用租约的方式保证，Proposer 的主：这里的主不是为了保证一致性，是为了保证性能。
+2. 严格落盘：fsync，Paxos 在重启阶段需要保证严格的状态一致。
+3.  Learner：提案补偿机制（ckpt、单条数据追加）保证各节点的数据一致。
+4. 消息重试队列：所有的网络请求都是异步，通过 InstanceID 保证消息有序执行，如果后面的消息先到会加入重试队列（InstanceID 排序）。
+5. Paxos Group：一组 Paxos 实例只能对应一个状态机，Paxos Group 是在进程内部组织多个 Paxos 实例（网络标识）。
+6. Write Batch：状态机会写入 Paxos log，然后由各自实现的状态机进行批量回放 Paxos log（状态机会记录执行过的最大 InstanceID）。
+7. 等等……
 
 
 
