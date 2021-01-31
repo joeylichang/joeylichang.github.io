@@ -57,14 +57,13 @@ Ph3.b：Learner 接收到 learn 请求之后，更新本地的状态机，并删
 
 在正式介绍 PhxPaxos 实现 Multi-Paxos 协议之前，需要对一些基础知识进行梳理，方便后面的理解。
 
-Proposalid vs. InstanceID
+#### Proposalid vs. InstanceID
 
 正如前述 Multi-Paxos 协议，只有在切换提交的 Proposer 时才提升 Proposalid，大部分时间 Proposer 固定，此时 Proposalid 不提升保持一致，可以理解为 Proposalid 标志 Proposer 的切换。每轮提案的提交试用的标识是 InstanceID，既一个 Proposalid 代表一段时间内固定的 Proposer，对应若干个 InstanceID。
 
-Proposer && Acceptor && Learner
+#### Proposer && Acceptor && Learner
 
 PhxPaxos 中有三个对象：Proposer、Acceptor、Learner 分别对应 Multi-Paxos 协议中相应的角色。在 PhxPaxos 实现中这三个角色在一个进程中，且共用一个线程。Proposer、Acceptor、Learner 三个类都继承自一个基类 Base，Base 基类中有一个 InstanceID 私有变量，每一轮提案结束之后，三个对象的 InstanceID 都会 ++，既每一个时刻三个角色的 InstanceID 都是相同的，这也是模块交互期间标识是否是同一轮次提案的依据。
-
 Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 ProposerState、AcceptorState、LearnerState）分别代表各自的环境变量（类似其他代码中 context 的概念），在每一轮提案 Learn 完毕之后，除了 InstanceID++，还会清空这三个模块的 state 变量，这样在下一轮 prepare 时 Acceptor 会返回空，否则遇到异常等情况不会清空，在下一轮提案会继续提交该内容。
 
 
