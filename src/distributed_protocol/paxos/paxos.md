@@ -1,3 +1,7 @@
+# Paxos
+
+## 协议内容
+
 Ph1.a：Proposer 向所有的 Acceptor 发送 prepare 请求，请求中带有 proposalid。
 
 Ph1.b：Acceptor 接收 prepare 请求，如果 prepare 带有的 proposalid 小于等于当前 Acceptor 的 proposealid 则拒绝请求，否则返回 accept 最大的 proposalid 及其 内容。
@@ -9,6 +13,8 @@ Ph2.a：Proposer 收集所有的 prepare 请求，收集多数 Acceptor 的返�
 Ph2.b：Acceptor 接收到 accept 请求，如果 proposalid 小于自身的 proposalid 则，拒绝请求，否则持久化待 Learner 学习，然后返回成功。 Proposer 收集 accept 的结果，如果多数返回成功，则提案提交成功。
 
 
+
+## 协议补充
 
 上述内容介绍了 Paxos 协议的核心内容，也是协议的精髓。但是在理解层面上还是有疑惑：
 
@@ -26,6 +32,8 @@ Ph3.b：Learner 接收到 learn 请求之后，更新本地的状态机，并删
 
 
 
+## 协议基础
+
 原则：后者认同前者（分为前者是否成功确认提案的两种情况）
 
 1. 确定之前的 proposalid 无法确定提案时（所有的 prepare 请求中最大的 proposalid 对应的内容为空，可以认为之前的提案已经确定并处理过了，或者还没有提案），新的 proposalid 提交自己的内容，不会冲突。
@@ -33,70 +41,7 @@ Ph3.b：Learner 接收到 learn 请求之后，更新本地的状态机，并删
 
 
 
-1. 在什么情况下可以认为任务提案被确定，不再更改？
-
-   多数节点 accept 之后。少数节点 accept 可能被确定 也 可能没有被确定，取决于下一轮投票收集 prepare 结果时是否收集到了少数 accept 节点的信息。
-
-2. Paxos 的两个阶段分别在做什么？
-
-   Ph1 通过 proposalid 抢占集群资源，并确认提案内容。
-
-   Ph2 提交提案，达到半数以上认为提交成功。
-
-3. 一个 proposalid 会有多个 Proposer 进入第二阶段吗？
-
-   不会，因为在 Ph1.a 中 Acceptor 会拒绝小于等于当前 proposalid 的请求，并且 Proposer 需要收集多数的结果，相同 proposalid 的 Proposer 只会选出一个。
-
-4. 在什么情况下，Proposer 可以将提案设置为自身的提案内容？
-
-   收到多数 Acceptor 的 prepare 请求中最大的 proposalid 的内容为空时，使用自身的内容作为提案。
-
-   大多数 Acceptor 上的 proposalid 只会相差一个，相差过多的节点不会超过半数（数学归纳法）。
-
-   如果有 Acceptor 之间 proposalid 相差大于 1，可能是网络异常等因素导致，会有补偿机制。
-
-5. 在第二阶段（Ph1.b），如果获取的提案内容为空，为什么可以保证旧的 proposalid 无法形成确定性取值？
-
-   旧提案在发送 prepare 或者 accept 请求时，通过 proposalid 的判断会被拒绝。
-
-6. 新的 proposalid 获取成功，旧 proposalid 的 Proposer 如何运行？
-
-   旧 proposalid 处于 Ph2 阶段，其中 Ph2.a 会正常继续发送 accept 请求，但是 Accept 会拒绝小于当前 proposalid 的请求。
-
-7. 如何保证新的 proposalid 不破坏已经达成的确定性提案？
-
-   如上所述 ”后者认同前者“ 原则，体现在 Ph1.a 阶段。
-
-8. 为什么在第二阶段（Ph1.b）存储提案内容时，只需要考虑 proposalid 最大的取值？
-
-   因为 Ph1.a 阶段需要收集多数 prepare 的结果，proposalid 最大的就是最近的上一轮，比这个小的一定是更之前的轮次。
-
-   每个轮次都是会收集多数 prepare 的结果，类似数学归纳法，在具体实现中如果差距较大会使用 checkpoint 进行数据同步。
-
-9. 在形成确定性提案之后出现任意半数以下的 Acceptor 故障，为何确定的提案不会被更改？
-
-   因为下一个轮次在收集 prepare 请求结果时，需要收集半数以上，一会不会遗漏已经提交成功的提案。
-
-10. 如果 Proposer 运行过程中，半数以下的 Acceptor 故障，此时将如何运行？
-
-   按上述协议正常运行，不会影响结果。
-
-11. 正在运行的 Proposer 和 半数以下的 Acceptor 同时故障，提案的内容可能是什么情况？为何之后新的 Proposer 可以形成确定性提案？
-
-    Ph1.a 阶段发生故障，此时新的 Proposer 可以继续下一轮的 proposalid 协商，因为 Ph1.b 中会接受大于当前 proposalid 的心 prepare 请求。
-
-    Ph1.b 故障的 Acceptor 无法返回结果，但是不影响协议继续，因为 Proposer 只需要半数以上的结果即可。
-
-    Ph2 阶段发生故障，没有发送accept请求如上；发送被少数接受，该提案可能被下一轮提交，可能不会被提交；发送被多数Acceptor接受，一定会被提交。
-
-    新的 Proposer 在 Ph1.a 会收集多数的 prepare 结果，在 Ph1.b 会遵从”后者认同前者“ 原则。
-
-    
-
-
-
-
-Multi-Paxos
+## Multi-Paxos
 
 前面介绍的是朴素 Paxos，朴素 Paxos 的核心部分每一轮提案都需要 prepare / accept 请求，如果每次发起 prepare 请求的 Proposer 都是同一个的话，可以省略后面的 prepare 请求，既一个 prepare + n 个 accept，减少 n - 1 次的网络请求在性能上将会有很大的提升——Multi-Paxos。
 
@@ -106,9 +51,9 @@ Multi-Paxos
 
 
 
-PhxPaxos
+## PhxPaxos
 
-基础
+### 基础
 
 在正式介绍 PhxPaxos 实现 Multi-Paxos 协议之前，需要对一些基础知识进行梳理，方便后面的理解。
 
@@ -124,7 +69,7 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
 
 
 
-实现
+### 实现
 
 1. Ph1.a ：Proposer 发起 prepare 请求
 
@@ -171,8 +116,13 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
 
 上述只是只是针对 PhxPaxos 对 Multi-Paxos 协议核心部分的实现进行了概要介绍，详情见：
 
-1. 
-2. 
+1. [PhxPaxos分析之提案控制策略篇](https://blog.csdn.net/weixin_41713182/article/details/88213176)
+
+2. [PhxPaxos分析之协议实现篇](https://blog.csdn.net/weixin_41713182/article/details/88304530)
+
+3. [PhxPaxos分析之Learner 篇](https://blog.csdn.net/weixin_41713182/article/details/88355009)
+
+   
 
 整体上结合协议内容阅读代码难度不大，需要注意 InstanceID 与 Proposalid 的含义及如何使用。以及 完整的提案周期内 Proposeor、Acceptor、Learner 之间怎么用 InstanceID 串联起来 和 相关环境数据被清空的便于下一轮提案得以继续进行，这些在 Paxos 论文中都是没有描述的具体实现。
 
@@ -182,11 +132,12 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
 
 
 
-活锁
+### 活锁
 
 多个Proposer同时发起Prepare请求，导致没有一个Proposer获得多数派的投票进而重试，循环往复的现象称为活锁。最后，介绍一些 PhxPaxos 是如何解决活锁问题的，其实解决活锁常见的有两种方式：控制提案提交的频率、重试增加带有避让时间。PhxPaxos 具体实现如下：
 
 1. 在一个 Proposer 内部提案一定是串行的，PhxPaxos 使用自研锁控制并发。
+
 2. 在自研锁内部实现提交频率 和 随机时间重试（默认不开启）。
    1. 等待锁的提案不能过长，既等待队列长度（默认没有设置）。
    2. 等待时间（默认没有设置）：
@@ -195,11 +146,12 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
       3. 引入随机性，判定是否可以获取锁，随机性与 m_iRejectRate 负相关，既越大 获取的概率越低；
       4. 平均等待时间，没间隔 250次 统计一次。
    3. 通过上述控制逻辑之后，才允许排队获取锁资源。
+   
 3. 默认情况第 2 步中的队列长度 和 等待时间都没有设置，而是无限重试间隔 1s。
 
+   
 
-
-结合 PhxPaxos 梳理下列问题
+## 深入理解
 
 1. 在什么情况下可以认为任务提案被确定，不再更改？
 
@@ -256,44 +208,4 @@ Proposer、Acceptor、Learner 三个对象都各自的 state 私有变量（既 
     Ph2 阶段发生故障，没有发送accept请求如上；发送被少数接受，该提案可能被下一轮提交，可能不会被提交；发送被多数Acceptor接受，一定会被提交。
 
     新的 Proposer 在 Ph1.a 会收集多数的 prepare 结果，在 Ph1.b 会遵从”后者认同前者“ 原则。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
