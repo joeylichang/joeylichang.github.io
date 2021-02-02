@@ -63,7 +63,8 @@ _注意：Term相当于逻辑时钟，每次选举会加1，每个Term内之多�
 |voteGranted| 候选人赢得了此张选票时为真|
 
 1. 如果req.term < currentTerm，返回false。
-2. 如果voteFor为空或者等于req.candudateId，并且req的日志至少比当前节点的新（先比较lastLogTerm在比较lastLogIndex），则返回true。
+2. 如果req.term == currentTerm &&（voteFor为空 || 等于req.candudateId），并且req的日志至少比当前节点的新（先比较lastLogTerm在比较lastLogIndex），则返回true。
+3. 如果req.term > currentTerm，返回true。
 
 Term是选举的逻辑时钟，每轮选举之前都会被复制为currentTerm++，如果req.term（候选者的currentTerm++）比当前节点还小说明已经落后至少一个选举的轮次了，应该拒绝其投票。选举的目的是选出数据最新（日志条目最多）的节点，lastLogTerm和lastLogIndex正是日志判断相对新旧的依据，因为leader写请求成功的标志是多数follower响应了leader的AppendEntries RPC（后面日志复制介绍），根据日志的新旧和日志匹配原则（后面介绍）可以保证选出的新leader是持有数据最新的节点，因为不是最新的日志节点会被多数节点（持有最新数据的节点）拒绝。
 
