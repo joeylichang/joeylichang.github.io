@@ -19,7 +19,7 @@ _注意：configEpoch的变更严格的说是标识拓扑信息的变化，拓�
 RedisCluster默认的Failover是自动的，无需外部命令或者模块参与。下面看一下默认的Failvoer流程：
 
 1. Failover发起条件
-	1. sharding内slave判断主故障，即Fail状态，必须有slave发起。
+	1. sharding内slave判断主故障，即Fail状态，必须由slave发起。
 	2. Maste有slot（代表Master负责数据）。
 	3. slave与master之间复制数据的连接，断开没有超过一定的时间，目的是保证slave数据的新鲜。
 2. 投票过程
