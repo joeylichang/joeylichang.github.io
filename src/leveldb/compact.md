@@ -138,7 +138,7 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
     if (base != NULL) {
       /* 选择一个level加入文件，原则如下：
        * 1. 与 level 0 有交集，直接选level 0
-       * 2. 与 level 0 没有交集，继续往下找，直到遇到有交集的层为止
+       * 2. 与 level 0 没有交集，继续往下找，直到遇到有交集的上一层为止
        * 3. 最多往下透传2层且 与 grandparent层（往下两层）的交集数据大小 < kMaxGrandParentOverlapBytes(默认 25 * 32MB)， 防止compact任务太重
        */
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
