@@ -1,6 +1,6 @@
 # Write
 
-LevelDB对外接口有三种写，既Put（写单个kv）、Write（批量写）、Delete（value为tombstone），所有的写在DBImpl内部都调用皮凉鞋接口。
+LevelDB对外接口有三种写，既Put（写单个kv）、Write（批量写）、Delete（value为tombstone），所有的写在DBImpl内部都调用Write接口。
 
 ```c++
 Status DBImpl::Write(const WriteOptions& options, WriteBatch* my_batch) {
