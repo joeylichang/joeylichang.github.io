@@ -17,7 +17,7 @@ type Topology struct {
 	chanFullVolumes chan storage.VolumeInfo		// 管道用于check volume是否写满，表示为不可写
 	Configuration *Configuration	                // 拓扑信息的配置
 
-	RaftServer raft.Server				// master节点rart的抽象
+	RaftServer raft.Server				// master节点raft的抽象
 }
 
 
