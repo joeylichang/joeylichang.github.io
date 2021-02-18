@@ -206,9 +206,9 @@ MIn.IO 最基本的设计理念是极简，在启动参数上也是尽量简化�
 
 2. 循环内调用 GetAllSets ，完成 RS 编码分块数量的计算，以及 <host, dir> 的分组（分几组，每组内部的路径是什么）
 
-   1. totalSizes = host_num * dir_num
+   1. 计算所有参数的 totalSizes = host_num * dir_num，totalSizes 是所有参数的一个数组
 
-   2. 求 totalSizes 的最大公约数 commonSize，计算备选集 setCounts = 预值 RS 编码分块数量（[4, 16]）能被 commonSize 整除的集合
+   2. 求 totalSizes 数组内所有元素的最大公约数 commonSize，计算备选集 setCounts = 预值 RS 编码分块数量（[4, 16]）能被 commonSize 整除的集合
 
       1. 如果环境变量设置了 EC 编码的分块数量，此时必须在 setCounts 中，否则启动失败
       2. 预值 RS 编码分块数量（[4, 16]），是程序内部固定值，既 RS 的分块数量必须是 [4, 16] 区间内的整数
@@ -227,7 +227,7 @@ MIn.IO 最基本的设计理念是极简，在启动参数上也是尽量简化�
 
    **举例解析：**
 
-   1. http://host{1...4}/export{1...4}，totalSizes = 16，最大公约数 commonSize = 16
+   1. http://host{1...4}/export{1...4} http://host{5...8}/export{5...8} ，totalSizes = [16, 16]，最大公约数 commonSize = 16
    2. 在 [4, 16] 中找出能被 commonSize 整除的集合 setCounts = [4, 8, 16]，确定可以进行 RS 分组
    3. 因为 dir 使用了  {...}，则从 setCounts 中选出整除或者被整除 dir_num 的备选集 setCounts2 = [4, 8, 16]，本步骤的目的是尽量让 dir 分配到不同的分组中
    4. globalErasureSetDriveCount = max{setCounts2} = 16
