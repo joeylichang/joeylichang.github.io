@@ -42,7 +42,7 @@
 
 ​						|_format.json（当前节点 cache 磁盘的元数据）
 
-​				|_sha256hash(object/object)
+​				|_sha256hash(bucket/object)
 
 ​						|_cache.json（ObjectInfo）
 
