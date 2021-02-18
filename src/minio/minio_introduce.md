@@ -239,15 +239,15 @@ MIn.IO 最基本的设计理念是极简，在启动参数上也是尽量简化�
    1. 根据 1.2 中生成的分组初始化 endpointlist，对其进行一些约束检查（类型是否一致、checkCrossDeviceMounts等），否则返回err
    2. setupType 选择
       1. FSSetupType：host 和 dir 都只有一个
-      2. ErasureSetupType：参数中没有host，只有dir，且多于一个
+      2. ErasureSetupType：参数中没有 {}
       3. DistErasureSetupType
          1. 参数生成的 endpoints 都是 url 类型
          2. 同一个dir，没有被同一个host  不同的 port 使用，既 dir 不能夸进程共享
-         3. 可能出现，所有的 endpoints 都是本机的url 类型，此时由于使用了 url 算作是 DistErasureSetupType 
+         3. 可能出现，所有的 endpoints 都是本机的 url 类型，此时由于使用了 url 算作是 DistErasureSetupType 
 
 4. 循环内会判断前后两个 zone 参数生成的 EC 编码分块数量 和 SetupType 是否相同，否则返回 error
 
-5.  循环内将生成的 <host, dir> 的分组，既 endpointList 加入 endpointZones
+5. 循环内将生成的 <host, dir> 的分组，既 endpointList 加入 endpointZones
 
 6. 循环外返回， endpointZones，EC 编码分块数，SetupType
 
