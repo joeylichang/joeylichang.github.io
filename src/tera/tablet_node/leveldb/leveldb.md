@@ -20,7 +20,7 @@ Tera 对leveldb 进行了大量的优化，主要包括一下几部分：
 
 Tera由于支持DFS，所以对env进行了扩展支持多种系统环境，在梳理Tera-LevelDB的时候一定要区分当前类在什么ENV环境处于整个代码架构的什么位置，图中针对ENV进行了标注（只关注后端使用DFS情况）。LevelDB的日志就是在本地，多以其ENV就是Posix。
 
-#####DB
+##### DB
 
 上层访问level的对外接口（通过open接口），一个tablet 对应一个 DB。
 
