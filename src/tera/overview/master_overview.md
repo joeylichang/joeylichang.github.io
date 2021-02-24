@@ -393,7 +393,7 @@ Master对CreateTable、分裂、合并、迁移等12种操作进行了抽象，�
 
 <img src="../../../images/tera_master_producre_arch.png" alt="tera_master_producre_arch" style="zoom:30%;" />
 
-详情见[Master 通用流程处理架构]([https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/overview.md#master-%E9%80%9A%E7%94%A8%E6%B5%81%E7%A8%8B%E5%A4%84%E7%90%86%E6%9E%B6%E6%9E%84](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/overview.md#master-通用流程处理架构))，结论是，从用户角度看，可以将流程处理看做是一个协程每一段子任务执行完毕后，调用 RunNextStage 下一个子任务。两个流程中的子任务可以使用同步机制进行同步。有了这部分知识储备方便我们后面介绍图中的12中流程处理逻辑。
+详情见 [Master 通用流程处理架构](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/tera/master/logic/procedure/overview.md#master-通用流程处理架构)，结论是，从用户角度看，可以将流程处理看做是一个协程每一段子任务执行完毕后，调用 RunNextStage 下一个子任务。两个流程中的子任务可以使用同步机制进行同步。有了这部分知识储备方便我们后面介绍图中的12中流程处理逻辑。
 
 
 
