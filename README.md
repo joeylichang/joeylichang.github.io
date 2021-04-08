@@ -16,7 +16,6 @@
 	* Twemcache
 	* RocksDB
 * **SSDB**
-	* [overview](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/ssdb/overview.md)
 	* [source code](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/ssdb/souce.md)
 	* [LevelDB](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/leveldb/overview.md)
 * **DynamoDB**
