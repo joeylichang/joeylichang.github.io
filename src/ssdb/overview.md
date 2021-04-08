@@ -11,14 +11,6 @@
 
 48 core , 512G ram , 3.6T SSD (NVME)
 
-## GET-QPS
-
-
-
-<img src="../../images/ssdb_get_qps.png" alt="ssdb_get_qps" style="zoom:50%;" />
-
-
-
 ## SET-QPS
 
 <img src="../../images/ssdb_set_qps.png" alt="ssdb_set_qps" style="zoom:50%;" />
