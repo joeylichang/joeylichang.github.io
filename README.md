@@ -1,10 +1,10 @@
 <html>
   <head>
     <meta name="baidu-site-verification" content="code-6yO6CSiVhx" />
-    <title>Joeycli Blog</title>
+    <title></title>
   </head>
   <body>
-    page contents
+    
   </body>
 </html>
 
