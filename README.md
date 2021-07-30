@@ -1,3 +1,13 @@
+<html>
+  <head>
+    <meta name="baidu-site-verification" content="code-6yO6CSiVhx" />
+    <title>My title</title>
+  </head>
+  <body>
+    page contents
+  </body>
+</html>
+
 # Navigation
 
 *  **[Overview of NoSQL distributed systems](https://github.com/joeylichang/joeylichang.github.io/blob/master/src/nosql_desigin/nosql_distributed_systems_desgin.md)**
