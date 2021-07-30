@@ -1,7 +1,7 @@
 <html>
   <head>
     <meta name="baidu-site-verification" content="code-6yO6CSiVhx" />
-    <title>My title</title>
+    <title>Joeycli Blog</title>
   </head>
   <body>
     page contents
