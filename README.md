@@ -1,11 +1,7 @@
 <html>
-   <head>
-    <meta name="google-site-verification" content="Nihpz5L4dkOOC9rJ0g_UgNZT3fVik2AVQ-nynIU_jas" />
-  </head>
   <head>
     <meta name="baidu-site-verification" content="code-6yO6CSiVhx" />
   </head>
-  
   <body>
     
   </body>
