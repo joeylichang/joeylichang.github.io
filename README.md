@@ -1,7 +1,6 @@
 <html>
   <head>
     <meta name="baidu-site-verification" content="code-6yO6CSiVhx" />
-    <title></title>
   </head>
   <body>
     
