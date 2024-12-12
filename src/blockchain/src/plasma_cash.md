@@ -210,5 +210,23 @@ Plasma Cash 中转入的资产(token)可以看作是 NFT，即一次转入的资
    operator 伪造 A 转 B ，然后 B 转 C， C 转 D， 这样 D 那最近两次的证明即可提款。
    但是 A 有动力要求提供 A 转 B 的证明，当然这种要求需要押金，防止 A 作恶，随意发起要求。
 
+### 优点
+
+1. 客户端 sharding，客户端只需监视 Plasma 链上的他们的代币。这意味着交易吞吐量可以在不增加个别用户负担的情况下进行扩展。
+2. 交易不再需要两阶段发送加确认，一旦交易被包含在主链上，就可以进行支出。（验证交易历史）
+3. 添加任何数量的独特代币（包括非同质化资产）没有额外的复杂性。
+4. 大金额的退出安全性更高，因为窃贼必须为他们想要窃取的每个代币提交单独的退出交易（多个 token 组成一个大金额）。这意味着即使在发生盗窃的情况下，代币仍然是安全的，因为攻击者无法一次性取走所有代币。如果链条发生故障，虽然代币仍然安全，但服务会中断，用户无法进行正常的交易。
+
+### 缺点
+
+1. 由于每个代币必须分配一个序列号，因此无法铸造任意小的代币，否则在某个时点，赎回代币的燃气费用将超过代币本身的价值。
+2. operator 中心化。
+
+针对 operator 的去中心化，[PoS Plasma Cash with Sharded Validation](https://ethresear.ch/t/pos-plasma-cash-with-sharded-validation/1486) 提出来一个方案，核心思想：
+1. 有一组出块节点 和 一组验证节点 都需要质押代币在主链上防止其作恶。
+2. 出块节点采用 PoS 轮流出块，出块可以很大。
+3. 验证节点根据策略或者规则验证大的默克尔树的一部份，并使用 BLS 签名（200，000 gas）占用的空间更小。
+
 ## Reference
 https://wiki.learnblockchain.cn/ethereum/layer-2.html
+https://ethresear.ch/t/pos-plasma-cash-with-sharded-validation/1486
