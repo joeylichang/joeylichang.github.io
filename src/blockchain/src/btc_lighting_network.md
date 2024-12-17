@@ -88,5 +88,5 @@ A 与 B 由通道， B 与 C 有通道，A 与 C 没有通道。
 
 
 ## Reference
-1. https://www.jianshu.com/p/e326802294e1
-2. https://blog.csdn.net/zr1213159840/article/details/111320296
+1. [闪电网络](https://www.jianshu.com/p/e326802294e1)
+2. [闪电网络RSMC协议技术原理](https://blog.csdn.net/zr1213159840/article/details/111320296)
