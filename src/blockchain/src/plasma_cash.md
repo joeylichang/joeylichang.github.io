@@ -228,5 +228,5 @@ Plasma Cash 中转入的资产(token)可以看作是 NFT，即一次转入的资
 3. 验证节点根据策略或者规则验证大的默克尔树的一部份，并使用 BLS 签名（200，000 gas）占用的空间更小。
 
 ## Reference
-[以太坊扩容技术-Plasma](https://wiki.learnblockchain.cn/ethereum/layer-2.html)
-[PoS Plasma Cash with Sharded Validation](https://ethresear.ch/t/pos-plasma-cash-with-sharded-validation/1486)
+1. [以太坊扩容技术-Plasma](https://wiki.learnblockchain.cn/ethereum/layer-2.html)
+2. [PoS Plasma Cash with Sharded Validation](https://ethresear.ch/t/pos-plasma-cash-with-sharded-validation/1486)
