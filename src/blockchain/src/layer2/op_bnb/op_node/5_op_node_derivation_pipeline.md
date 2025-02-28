@@ -28,6 +28,7 @@ DerivationPipeline 内部分为两大部分：
 7. verifyNewL1Origin
 8. 从 AttributesQueue 获取数据并设置给 [AttributesHandler](./1_op_node_components.md#attributeshandler) 等待下一次的派生。
 
+**注意：[L1Traversal.AdvanceL1Block](./4_op_node_derivation_data.md#l1traversal) 在 EngineQueue.Step 之后会被调用，从 L1 拉取新的 block，为下一轮数据读取做准备。**
 
 ### Summary
 

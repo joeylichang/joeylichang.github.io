@@ -18,10 +18,11 @@ op-geth 的元数据（UnSafe/Safe/Finalized） 都是 op-node 下发，不会�
    4. [Derivation Data](./4_op_node_derivation_data.md) 介绍了从 L1Block 的 receipt 数据中解析 L2Block 的全部组件。
 3. 核心层：[DerivationPipeline](./5_op_node_derivation_pipeline.md) 和 [Sequencer](./6_op_node_sequencer.md) 介绍了 op-node 两个核心功能派生和定序。
 
-除了上述内容外，还有三部分对于在更高层次上理解 op-node 也是很重要的：
+除了上述内容外，还有四部分对于在更高层次上理解 op-node 也是很重要的：
 1. [EngineController.MetaData](./2_op_node_components.md#metadata) EngineController 维护的元数据，可以通过对他们的梳理，理解派生和定序是维护哪些数据，怎么推进，怎么协同工作的。
 2. [ELSync and CLSync](./2_op_node_components.md#elsyncmode-and-clsyncmode) 两种同步模式的学习，对于 P2P 和控制流会有一个更深刻的理解。
 3. [DerivationPipeline and Sequencer](#协同工作) 从更高层面上整体的理解 op-node 在定序器模式下的工作流程。
+4. [op node rest](./7_op_node_reset.md) 介绍了异常情况下 rest op-node，包括 reorg（重点）。
 
 ## EventLoop
 

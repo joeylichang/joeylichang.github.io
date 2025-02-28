@@ -34,14 +34,25 @@ PlanNextSequencerAction 用于计算 [RunNextSequencerAction](#runnextsequencera
    1. 如果正在运行的派生来的数据，需要给充足的时间。
 3. d.nextAction.Sub(now) > 0 && buildingOnto.Hash == engine.UnsafeL2Head().Hash
    1. 正在生成的 L2Block 是在 UnsafeL2Head 之后，表示正常出块中，且有剩余时间，就返回剩余时间。
-4. buildingID != (eth.PayloadID{}) && buildingOnto.Hash == head.Hash
-   1. 标识正在构建，并且构建的信息是正确的，也就是说没有异常
+4. buildingID != (eth.PayloadID{}) && buildingOnto.Hash == engine.UnsafeL2Head().Hash
+   1. 表示正在构建，并且构建的信息是正确的，也就是说没有异常
    2. payloadTime.Sub(now) - sealingDuration(1ms) 或者 0，返回剩余的构建时间
 5. 如果没有构建或者构建信息不对
    1. 应该立刻返回 0 ，立刻开始下一次的构建。
    2. **也有一种情况特殊，前一个 block 出块快了，现在剩余的时间大于 blocktime 1s，需要返回这个差值用于 sleep，这样 L1 和 L2 才能对齐**
 
-**注意：前一个 L2Block 时间提前了，后一个会 delay，保证 L2Block 时间时间占用时间是 1s。**
+nextAction 的作用是标记下一个动作的时间，是在 RunNextSequencerAction 里面更新，基本的原则是：
+1. 返回的 ErrReset，nextAction = now + BlockTime（1s）
+2. 返回去其他 Err，nextAction = now + 1s
+3. 正确返回没有更新这个时间
+
+PlanNextSequencerAction 总结：
+1. 如果是派生（更新 safe head），返回 BlockTime（1s），给他足够的时间更新。
+2. 如果正在构建的 block 是延续的（没有分叉），并且 nextAction 有剩余时间，直接返回这个剩余时间
+3. nextAction 没有剩余时间，并且正在构建的 block 是延续的（没有分叉），返回 payloadTime - now -1ms（小于 0 则返回 0）
+4. 否则，返回 payloadTime - now - BlockTime（1s）(小于 0 返回 0)
+   1. 任务有异常，那么是给剩余的时间（此时也没有立刻结束，应该是给一些时间收尾）。
+5. **注意：如果 payloadTime 剩余时间不足，此时返回的时间是0，也就是 L2 停止了一段时间之后，会连续出空块。**
 
 ## RunNextSequencerAction
 
@@ -70,3 +81,7 @@ RunNextSequencerAction 开始新的区块构建，或 seal 现有任务，最好
       1. return err
    4. err == derive.ErrReset / other /ErrTemporary
       1. d.nextAction + 1s
+
+总结：
+1. 继续前面没完成的任务，确认一下
+2. 否则，开启新的构建任务
