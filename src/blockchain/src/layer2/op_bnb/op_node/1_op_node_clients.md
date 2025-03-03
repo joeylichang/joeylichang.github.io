@@ -23,9 +23,9 @@ L1Client 仅有四个 API 供 op-node 使用，即 `L1BlockRefByLabel`，`L1Bloc
 * `eth_getBlockByNumber`
   1. `Earliest(0)`：返回 genesis block。
   2. `Pending(-1)`：如果不是 miner 会回退到 Latest。
-  3. `Latest(-2)`：返回 BlockChain 的 CurrentBlock，即最新 Inert 的 blcok。
-  4. `Finalized(-3)`：最新被 fast finality 确认的 blcok。
-  5. `Safe(-4)`：fast finality 计划确认的下一个 blcok，或者说正在确认的 blcok。
+  3. `Latest(-2)`：返回 BlockChain 的 CurrentBlock，即最新 Inert 的 block。
+  4. `Finalized(-3)`：最新被 fast finality 确认的 block。
+  5. `Safe(-4)`：fast finality 计划确认的下一个 block，或者说正在确认的 block。
 
 其中 Latest(-2，Unsafe)，Finalized(-3)，Safe(-4) op-node 会使用，其他的 label 目前没有被使用。
 
@@ -91,8 +91,9 @@ L1OriginSelector 基于 confDepth 进行的封装，**并且仅仅实现了 `Fin
 
 具体步骤如下：
 1. `currentOrigin = L1Client.L1BlockRefByHash(l2Head.L1Origin.Hash)`，获取当前 L2Head 对应的 L1Origin，如果返回 error，那么直接返回所以对于这个接口不容忍失败，后面的可以容忍失败。
-2. `pastSeqDrift := l2Head.Time+los.cfg.BlockTime > currentOrigin.Time + MaxSequencerDrift`，判断下一恶搞 L2Block 是否超时
+2. `pastSeqDrift := l2Head.Time+los.cfg.BlockTime > currentOrigin.Time + MaxSequencerDrift`，判断下一个 L2Block 是否超时
    1. `MaxSequencerDrift` 在 Fjord 升级之后（Sep-24-2024 06:00 AM +UTC）写死是 1800，配置值失效。
+   2. 即 L1 停止 30min 之后不能出块。
 3. `nextOrigin = L1Client.L1BlockRefByNumber(currentOrigin.Number+1)`，获取下一个 nextL1Origin。
    1. 这里有一个细节，如果已经超时即`pastSeqDrift == true`，这个请求没有超时时间，会一直等到返回结果。
    2. 否则，超时时间是 100ms。

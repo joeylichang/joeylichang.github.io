@@ -63,7 +63,7 @@ ChannelBuilder 是在 ChannelOut 基础上管理其吐出来的 Frame，以及�
 2. L2Block 创建的跨度，不能超过 14400 个 L1Block，即12小时。
    1. op-batcher 处理的数据的 L1Origin 超过目前 SeqWindowSize，则不会被提交成功。
    2. 结合 [BatchQueue.CheckBatch](../op_node/4_op_node_derivation_data.md#batchqueue) 可以知道，一个不会发送，一个不会解析，L2Chain 就会停止出块。
-3. 全部 L2Block 数据上链的过程不呢个超过 1200 个 L1Block。
+3. 全部 L2Block 数据上链的过程不能超过 1200 个 L1Block。
 
 ## channel
 
